@@ -1,0 +1,5 @@
+{
+  "name": "Portrait Prompt Master",
+  "description": "專業的 AI 人像提示詞生成工具，支援性別、國籍、臉型、解析度等設定，具備真隨機生成與自訂功能，支援中英文及 JSON / YAML / Markdown 格式輸出。",
+  "requestFramePermissions": []
+}
