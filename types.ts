@@ -1,21 +1,35 @@
+
 export type Gender = 'female' | 'male';
 
+export type TaskMode = 'generation' | 'editing';
+
+// Replaces Midjourney ReferenceType with Gemini Editing Intents
+export type EditingIntent = 'general' | 'high_denoising' | 'keep_subject' | 'keep_composition';
+
+export interface ReferenceImage {
+  id: string;
+  url: string;
+  intent: EditingIntent;
+}
+
 export interface PortraitState {
+  taskMode: TaskMode; // New: Switch between Gen/Edit
   gender: Gender;
+  referenceImages: ReferenceImage[]; 
   nationality: string;
   age: string;
-  bodyType: string; // New: Body Type
+  bodyType: string;
   role: string;
   faceShape: string;
-  eyeGaze: string; // New: Eye Gaze
+  eyeGaze: string;
   hairColor: string;
   hairStyle: string;
   appearance: string;
   clothing: string;
-  clothingDetail: string; // New: Fabric/Texture
+  clothingDetail: string;
   accessories: string;
   action: string;
-  hands: string; // New: Hand Interaction
+  hands: string;
   composition: string;
   era: string;
   environment: string;
@@ -26,6 +40,7 @@ export interface PortraitState {
   mood: string;
   aspectRatio: string;
   quality: string[];
+  preservation: string[]; // New: For editing mode
   negativePrompt: string;
 }
 
@@ -35,7 +50,7 @@ export type OutputFormat = 'text' | 'json' | 'yaml' | 'markdown';
 export interface PromptOption {
   label: string;
   value: string;
-  gender?: Gender; // Optional: to filter options by gender if needed
+  gender?: Gender; 
 }
 
 export interface OptionCategory {

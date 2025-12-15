@@ -1,3 +1,4 @@
+
 import { OptionCategory, PromptOption } from './types';
 
 // Gender-specific helper could be used here, but for simplicity we list options and can filter in UI if needed.
@@ -427,6 +428,16 @@ export const QUALITY_TAGS: PromptOption[] = [
   { label: 'HDR', value: 'HDR' },
   { label: 'ArtStation 趨勢', value: 'trending on artstation' },
   { label: '精緻五官', value: 'detailed face' }
+];
+
+export const PRESERVATION_OPTIONS: PromptOption[] = [
+    { label: '臉部特徵 (Face)', value: 'facial features' },
+    { label: '髮型 (Hair)', value: 'hair style' },
+    { label: '服裝 (Clothing)', value: 'clothing' },
+    { label: '背景 (Background)', value: 'background environment' },
+    { label: '構圖 (Composition)', value: 'image composition' },
+    { label: '色調 (Colors)', value: 'color palette' },
+    { label: '光影 (Lighting)', value: 'lighting conditions' }
 ];
 
 export const COMMON_NEGATIVE_PROMPTS = [

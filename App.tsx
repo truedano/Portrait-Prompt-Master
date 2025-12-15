@@ -1,27 +1,31 @@
+
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS } from './constants';
-import { PortraitState, Gender, OutputLanguage, OutputFormat, PromptOption } from './types';
+import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS } from './constants';
+import { PortraitState, Gender, OutputLanguage, OutputFormat, ReferenceImage, TaskMode } from './types';
 import { SelectionCard } from './components/SelectionCard';
+import { ReferenceImageCard } from './components/ReferenceImageCard';
 import { Accordion } from './components/Accordion';
 
 const App: React.FC = () => {
   // --- State ---
   const [state, setState] = useState<PortraitState>({
+    taskMode: 'generation', // Default mode
     gender: 'female',
+    referenceImages: [],
     nationality: '',
     age: '',
-    bodyType: '', // New
+    bodyType: '',
     role: '',
     faceShape: '',
-    eyeGaze: '', // New
+    eyeGaze: '',
     hairColor: '',
     hairStyle: '',
     appearance: '',
     clothing: '',
-    clothingDetail: '', // New
+    clothingDetail: '',
     accessories: '', 
     action: '',
-    hands: '', // New
+    hands: '',
     composition: '', 
     era: '', 
     environment: '',
@@ -32,6 +36,7 @@ const App: React.FC = () => {
     mood: '',
     aspectRatio: '',
     quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
+    preservation: [],
     negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur'
   });
 
@@ -48,13 +53,18 @@ const App: React.FC = () => {
     return fullLabel.split('(')[0].trim();
   };
 
-  const getTerm = (catId: keyof PortraitState | 'quality', value: string, lang: OutputLanguage): string => {
+  const getTerm = (catId: keyof PortraitState | 'quality' | 'preservation', value: string, lang: OutputLanguage): string => {
     if (!value) return '';
     if (lang === 'en') return value;
     if (value.startsWith('random ')) return '隨機 (Random)';
 
     if (catId === 'quality') {
       const tag = QUALITY_TAGS.find(t => t.value === value);
+      return tag ? extractLabel(tag.label, lang)! : value;
+    }
+
+    if (catId === 'preservation') {
+      const tag = PRESERVATION_OPTIONS.find(t => t.value === value);
       return tag ? extractLabel(tag.label, lang)! : value;
     }
 
@@ -70,45 +80,32 @@ const App: React.FC = () => {
   // --- Logic ---
 
   useEffect(() => {
-    // 1. Prepare Data Object
+    // 1. Resolve raw values to localized strings
     const genderTermEn = state.gender === 'female' ? 'woman' : 'man';
     const genderTermZh = state.gender === 'female' ? '女性' : '男性';
     
-    // Construct Subject: e.g., "A Taiwanese teenager woman university student"
-    const subjectEn = [
-        state.nationality, 
-        state.age,
-        state.gender === 'female' ? 'woman' : 'man', 
-        state.role
-    ].filter(Boolean).join(' ');
+    // Raw fields for logic
+    const raw = state;
 
-    const subjectZh = [
-        getTerm('nationality', state.nationality, 'zh'),
-        getTerm('age', state.age, 'zh'),
-        genderTermZh,
-        getTerm('role', state.role, 'zh')
-    ].filter(Boolean).join('');
-
-
-    // Collect all fields with their resolved text
+    // Localized fields for output
     const fields = {
       quality: state.quality.map(q => getTerm('quality', q, outputLang)),
-      subject: outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`,
+      preservation: state.preservation.map(p => getTerm('preservation', p, outputLang)),
       nationality: getTerm('nationality', state.nationality, outputLang),
       age: getTerm('age', state.age, outputLang),
-      bodyType: getTerm('bodyType', state.bodyType, outputLang), // New
+      bodyType: getTerm('bodyType', state.bodyType, outputLang),
       gender: outputLang === 'en' ? genderTermEn : genderTermZh,
       role: getTerm('role', state.role, outputLang),
       faceShape: getTerm('faceShape', state.faceShape, outputLang),
-      eyeGaze: getTerm('eyeGaze', state.eyeGaze, outputLang), // New
+      eyeGaze: getTerm('eyeGaze', state.eyeGaze, outputLang),
       hairColor: getTerm('hairColor', state.hairColor, outputLang),
       hairStyle: getTerm('hairStyle', state.hairStyle, outputLang),
       appearance: getTerm('appearance', state.appearance, outputLang),
       clothing: getTerm('clothing', state.clothing, outputLang),
-      clothingDetail: getTerm('clothingDetail', state.clothingDetail, outputLang), // New
+      clothingDetail: getTerm('clothingDetail', state.clothingDetail, outputLang),
       accessories: getTerm('accessories', state.accessories, outputLang),
       action: getTerm('action', state.action, outputLang),
-      hands: getTerm('hands', state.hands, outputLang), // New
+      hands: getTerm('hands', state.hands, outputLang),
       composition: getTerm('composition', state.composition, outputLang),
       era: getTerm('era', state.era, outputLang),
       environment: getTerm('environment', state.environment, outputLang),
@@ -123,183 +120,316 @@ const App: React.FC = () => {
 
     let result = '';
 
-    if (outputFormat === 'json') {
-      // JSON Format
-      const jsonObj = {
-        meta: {
-          language: outputLang,
-          type: "portrait"
-        },
-        prompt_elements: {
-          quality: fields.quality,
-          subject: {
-             full_text: fields.subject,
-             nationality: fields.nationality,
-             age: fields.age,
-             body_type: fields.bodyType,
-             gender: fields.gender,
-             role: fields.role
-          },
-          features: {
-             face: fields.faceShape,
-             eyes: fields.eyeGaze,
-             hair_color: fields.hairColor,
-             hair_style: fields.hairStyle,
-             appearance: fields.appearance,
-             clothing: fields.clothing,
-             texture: fields.clothingDetail,
-             accessories: fields.accessories
-          },
-          scene: {
-             action: fields.action,
-             hands: fields.hands,
-             composition: fields.composition,
-             era: fields.era,
-             environment: fields.environment,
-             lighting: fields.lighting,
-             camera: fields.camera
-          },
-          style: {
-             art: fields.artStyle,
-             color: fields.colorPalette,
-             mood: fields.mood,
-             ratio: fields.aspectRatio
-          }
-        },
-        negative_prompt: fields.negative
-      };
-      result = JSON.stringify(jsonObj, null, 2);
+    // --- JSON / YAML Output (Structured Data) ---
+    if (outputFormat === 'json' || outputFormat === 'yaml') {
+        const dataObj = {
+            meta: { 
+                language: outputLang, 
+                task_mode: state.taskMode, 
+                engine: "gemini_nano_banana_pro" 
+            },
+            input_images: state.referenceImages.map(img => ({
+                url: img.url,
+                intent: img.intent
+            })),
+            prompt_content: {
+                subject: { ...fields, quality: undefined, preservation: undefined, negative: undefined }, // Spread all fields
+                preservation: fields.preservation,
+                quality_tags: fields.quality
+            },
+            negative_prompt: fields.negative
+        };
+        
+        if (outputFormat === 'json') {
+            result = JSON.stringify(dataObj, null, 2);
+        } else {
+            // Detailed YAML construction
+            const lines: string[] = [];
+            lines.push(`meta:`);
+            lines.push(`  mode: ${state.taskMode}`);
+            lines.push(`  language: ${outputLang}`);
+            lines.push(`  engine: gemini_nano_banana_pro`);
 
-    } else if (outputFormat === 'yaml') {
-      // YAML Format
-      const qList = fields.quality.length > 0 ? `[${fields.quality.map(q => `"${q}"`).join(', ')}]` : '[]';
-      result = `meta:
-  language: ${outputLang}
-  type: portrait
-prompt_elements:
-  quality: ${qList}
-  subject:
-    full_text: "${fields.subject}"
-    nationality: "${fields.nationality}"
-    age: "${fields.age}"
-    body_type: "${fields.bodyType}"
-    gender: "${fields.gender}"
-    role: "${fields.role}"
-  features:
-    face: "${fields.faceShape}"
-    eyes: "${fields.eyeGaze}"
-    hair_color: "${fields.hairColor}"
-    hair_style: "${fields.hairStyle}"
-    appearance: "${fields.appearance}"
-    clothing: "${fields.clothing}"
-    texture: "${fields.clothingDetail}"
-    accessories: "${fields.accessories}"
-  scene:
-    action: "${fields.action}"
-    hands: "${fields.hands}"
-    composition: "${fields.composition}"
-    era: "${fields.era}"
-    environment: "${fields.environment}"
-    lighting: "${fields.lighting}"
-    camera: "${fields.camera}"
-  style:
-    art: "${fields.artStyle}"
-    color: "${fields.colorPalette}"
-    mood: "${fields.mood}"
-    ratio: "${fields.aspectRatio}"
-negative_prompt: "${fields.negative}"`;
+            if (state.referenceImages.length > 0) {
+                lines.push(`images:`);
+                state.referenceImages.forEach(img => {
+                    lines.push(`  - url: "${img.url}"`);
+                    lines.push(`    intent: ${img.intent}`);
+                });
+            }
 
-    } else if (outputFormat === 'markdown') {
-      // Markdown Format
-      result = `# Portrait Prompt Generation
-**Language:** ${outputLang === 'en' ? 'English' : 'Chinese'}
+            lines.push(`prompt:`);
+            
+            // Define all mapping fields for YAML
+            const yamlFields: Record<string, string | string[]> = {
+                subject_desc: [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join(' '),
+                body_type: fields.bodyType,
+                face_features: [fields.faceShape, fields.eyeGaze].filter(Boolean).join(', '),
+                hair: [fields.hairColor, fields.hairStyle].filter(Boolean).join(' '),
+                appearance_details: fields.appearance,
+                outfit: [fields.clothing, fields.clothingDetail].filter(Boolean).join(' '),
+                accessories: fields.accessories,
+                action_pose: fields.action,
+                hand_interaction: fields.hands,
+                scene_environment: [fields.environment, fields.era].filter(Boolean).join(', '),
+                composition_angle: fields.composition,
+                camera_lens: fields.camera,
+                lighting: fields.lighting,
+                color_tone: fields.colorPalette,
+                art_style: fields.artStyle,
+                mood_emotion: fields.mood,
+                preservation: fields.preservation,
+                quality_tags: fields.quality,
+                aspect_ratio: fields.aspectRatio
+            };
 
-## Core Subject
-> ${fields.subject}
-> ${fields.bodyType ? `*Body Type: ${fields.bodyType}*` : ''}
+            // Write fields that have values
+            Object.entries(yamlFields).forEach(([key, val]) => {
+                if (!val || (Array.isArray(val) && val.length === 0)) return;
+                
+                if (Array.isArray(val)) {
+                    // For arrays like quality tags
+                    lines.push(`  ${key}: [${val.map(v => `"${v}"`).join(', ')}]`);
+                } else {
+                    // For strings, handle basic quoting
+                    lines.push(`  ${key}: "${val}"`);
+                }
+            });
 
-## Quality Tags
-${fields.quality.map(q => `- ${q}`).join('\n')}
+            if (fields.negative) {
+                lines.push(`negative_prompt: "${fields.negative.replace(/"/g, '\\"')}"`);
+            }
 
-## Negative Prompt
-> ${fields.negative || '(None)'}
+            result = lines.join('\n');
+        }
+    } 
+    // --- Text / Markdown Output ---
+    else {
+        // A. GENERATION MODE (Descriptive)
+        if (state.taskMode === 'generation') {
+            const subjectEn = [state.nationality, state.age, state.gender === 'female' ? 'woman' : 'man', state.role].filter(Boolean).join(' ');
+            const subjectZh = [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join('');
+            const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
 
-## Character Details
-| Category | Value |
-| :--- | :--- |
-| **Nationality** | ${fields.nationality || '-'} |
-| **Age** | ${fields.age || '-'} |
-| **Body Type** | ${fields.bodyType || '-'} |
-| **Gender** | ${fields.gender} |
-| **Role** | ${fields.role || '-'} |
-| **Face** | ${fields.faceShape || '-'} |
-| **Eye Gaze** | ${fields.eyeGaze || '-'} |
-| **Hair Color** | ${fields.hairColor || '-'} |
-| **Hair Style** | ${fields.hairStyle || '-'} |
-| **Appearance** | ${fields.appearance || '-'} |
-| **Clothing** | ${fields.clothing || '-'} |
-| **Texture** | ${fields.clothingDetail || '-'} |
-| **Accessories** | ${fields.accessories || '-'} |
+            // ORDER OPTIMIZATION FOR GEMINI / NANO BANANA PRO
+            const parts = [
+                mainSubject,             // 1. Who (Subject is King)
+                fields.action,           // 2. Doing what?
+                fields.environment,      // 3. Where?
+                fields.clothing,         // 4. Wearing what?
+                fields.clothingDetail,
+                fields.appearance,       // 5. Details
+                fields.accessories,
+                fields.bodyType,
+                fields.faceShape,
+                fields.hairColor, 
+                fields.hairStyle,
+                fields.eyeGaze,
+                fields.hands,
+                fields.composition,      // 6. Camera/Angle
+                fields.camera,
+                fields.lighting,
+                fields.era,
+                fields.artStyle,         // 7. Artistic Style
+                fields.mood,
+                fields.colorPalette,
+                ...fields.quality,       // 8. Quality Boosters
+                fields.aspectRatio       // 9. Tech specs
+            ].filter(Boolean);
 
-## Scene & Style
-| Category | Value |
-| :--- | :--- |
-| **Action** | ${fields.action || '-'} |
-| **Hands** | ${fields.hands || '-'} |
-| **Composition** | ${fields.composition || '-'} |
-| **Era** | ${fields.era || '-'} |
-| **Environment** | ${fields.environment || '-'} |
-| **Lighting** | ${fields.lighting || '-'} |
-| **Color** | ${fields.colorPalette || '-'} |
-| **Camera** | ${fields.camera || '-'} |
-| **Art Style** | ${fields.artStyle || '-'} |
-| **Mood** | ${fields.mood || '-'} |
-| **Ratio** | ${fields.aspectRatio || '-'} |
-`;
+            const separator = outputLang === 'en' ? ', ' : '，';
+            const basePrompt = parts.join(separator);
+            
+            if (outputFormat === 'markdown') {
+                // MARKDOWN OUTPUT
+                let md = `**Prompt**\n> ${basePrompt}`;
 
-    } else {
-      // Raw Text Format (Standard Prompt)
-      const parts = [
-        ...fields.quality,
-        fields.subject,
-        fields.bodyType, // Added after subject
-        fields.accessories,
-        fields.faceShape,
-        fields.eyeGaze, // Added after face
-        fields.hairColor, 
-        fields.hairStyle,
-        fields.appearance,
-        fields.clothing,
-        fields.clothingDetail, // Added after clothing
-        fields.action,
-        fields.hands, // Added after action
-        fields.composition,
-        fields.era,
-        fields.environment,
-        fields.lighting,
-        fields.colorPalette,
-        fields.camera,
-        fields.artStyle,
-        fields.mood,
-        fields.aspectRatio
-      ].filter(Boolean);
+                if (fields.negative) {
+                    md += `\n\n**Negative Prompt**\n> ${fields.negative}`;
+                }
 
-      const separator = outputLang === 'en' ? ', ' : '，';
-      const positivePrompt = parts.join(separator);
-      
-      if (fields.negative) {
-         result = `${positivePrompt}\n\n--no ${fields.negative}`;
-      } else {
-         result = positivePrompt;
-      }
+                if (state.referenceImages.length > 0) {
+                    md += `\n\n**References**\n${state.referenceImages.map(img => `- ${img.url} (${img.intent})`).join('\n')}`;
+                }
+                result = md;
+            } else {
+                // PLAIN TEXT OUTPUT
+                result = basePrompt;
+                if (state.referenceImages.length > 0) {
+                     result += `\n\n[References: ${state.referenceImages.map(i => i.url).join(', ')}]`;
+                }
+                if (fields.negative) {
+                    result += `\n\n--no ${fields.negative}`;
+                }
+            }
+        } 
+        // B. EDITING MODE (Instructional)
+        else {
+            const instructions: string[] = [];
+
+            // --- CONFLICT RESOLUTION LOGIC ---
+            // If a preservation tag is present, we SUPPRESS related modification instructions.
+            // Values here match 'value' in PRESERVATION_OPTIONS constants.ts
+            const isPreserved = (targetValue: string) => {
+                return state.preservation.includes(targetValue);
+            };
+
+            // 1. Process Intents
+            state.referenceImages.forEach(img => {
+                if (img.intent === 'high_denoising') instructions.push(outputLang === 'en' ? "Completely reimagine the image." : "完全重新構想這張圖片。");
+                if (img.intent === 'keep_subject') instructions.push(outputLang === 'en' ? "Keep the facial features unchanged." : "保持臉部特徵不變。");
+                if (img.intent === 'keep_composition') instructions.push(outputLang === 'en' ? "Retain the original composition and pose." : "保留原始構圖與姿勢。");
+            });
+
+            // 2. Process Preservation (Positive Constraint)
+            if (fields.preservation.length > 0) {
+                const keepItems = fields.preservation.join(outputLang === 'en' ? ', ' : '、');
+                instructions.push(outputLang === 'en' 
+                    ? `Ensure the ${keepItems} remain unchanged.` 
+                    : `確保${keepItems}保持不變。`);
+            }
+
+            // 3. Build Instructions from fields (With Conflict Checks)
+
+            // Change Subject/Demographics
+            // If "facial features" is preserved, we avoid instructions that fundamentally change the person's identity.
+            if (!isPreserved('facial features')) {
+                const demographicParts = [];
+                if (raw.nationality) demographicParts.push(fields.nationality);
+                if (raw.age) demographicParts.push(fields.age);
+                if (raw.gender) demographicParts.push(fields.gender);
+                if (raw.faceShape) demographicParts.push(fields.faceShape);
+
+                if (demographicParts.length > 0) {
+                    const desc = demographicParts.join(' ');
+                    instructions.push(outputLang === 'en' 
+                        ? `Change the character's appearance to be ${desc}.` 
+                        : `將角色外觀改為${desc}。`);
+                }
+            }
+
+            // Roles are often props/costumes, so we allow them unless strictly conflicting
+            if (raw.role) {
+                instructions.push(outputLang === 'en' 
+                    ? `Change the role to a ${fields.role}.` 
+                    : `將角色改為${fields.role}。`);
+            }
+
+            // Hair
+            if ((raw.hairColor || raw.hairStyle) && !isPreserved('hair style')) {
+                 const hair = [fields.hairColor, fields.hairStyle].filter(Boolean).join(' ');
+                 instructions.push(outputLang === 'en' ? `Change hair to ${hair}.` : `將髮型改為${hair}。`);
+            }
+
+            // Change Clothing
+            if ((raw.clothing || raw.clothingDetail) && !isPreserved('clothing')) {
+                const cloth = [fields.clothing, fields.clothingDetail].filter(Boolean).join(' ');
+                instructions.push(outputLang === 'en' 
+                    ? `Change the outfit to ${cloth}.` 
+                    : `將服裝更換為${cloth}。`);
+            }
+
+            // Add Accessories (Usually safe to add even if clothing is preserved, unless specific conflict)
+            if (raw.accessories) {
+                instructions.push(outputLang === 'en' 
+                    ? `Add ${fields.accessories} to the character.` 
+                    : `為角色添加${fields.accessories}。`);
+            }
+
+            // Change Action/Pose (ADDED)
+            if (raw.action && !isPreserved('image composition')) {
+                instructions.push(outputLang === 'en' 
+                   ? `Change pose to ${fields.action}.` 
+                   : `將姿勢改為${fields.action}。`);
+            }
+
+            // Change Hands (ADDED)
+            if (raw.hands) {
+                instructions.push(outputLang === 'en' 
+                   ? `Character is ${fields.hands}.` 
+                   : `角色${fields.hands}。`);
+            }
+
+            // Change Background / Era
+            if ((raw.environment || raw.era) && !isPreserved('background environment')) {
+                const bg = [fields.environment, fields.era].filter(Boolean).join(' ');
+                instructions.push(outputLang === 'en' 
+                    ? `Change the background to ${bg}.` 
+                    : `將背景改為${bg}。`);
+            }
+
+            // Change Composition / Camera
+            if ((raw.composition || raw.camera || raw.aspectRatio) && !isPreserved('image composition')) {
+                const comp = [fields.composition, fields.camera, fields.aspectRatio].filter(Boolean).join(' ');
+                instructions.push(outputLang === 'en' 
+                    ? `Adjust composition to ${comp}.` 
+                    : `將構圖調整為${comp}。`);
+            }
+
+            // Change Style
+            if (raw.artStyle) {
+                instructions.push(outputLang === 'en' 
+                    ? `Transform the style to ${fields.artStyle}.` 
+                    : `將風格轉換為${fields.artStyle}。`);
+            }
+
+            // Change Mood/Expression
+            // If face is preserved, changing expression is tricky but possible. We allow it.
+            if (raw.mood) {
+                instructions.push(outputLang === 'en' 
+                    ? `Make the character look ${fields.mood}.` 
+                    : `讓角色看起來${fields.mood}。`);
+            }
+
+            // Change Lighting
+            if (raw.lighting && !isPreserved('lighting conditions')) {
+                instructions.push(outputLang === 'en' 
+                    ? `Apply ${fields.lighting}.` 
+                    : `應用${fields.lighting}。`);
+            }
+
+            // Change Colors
+            if (raw.colorPalette && !isPreserved('color palette')) {
+                instructions.push(outputLang === 'en' 
+                    ? `Use a ${fields.colorPalette}.` 
+                    : `使用${fields.colorPalette}。`);
+            }
+
+            const baseInstructions = instructions.join(' ');
+            
+            if (outputFormat === 'markdown') {
+                // MARKDOWN OUTPUT (Editing)
+                let md = `**Instructions**\n> ${baseInstructions}`;
+
+                if (fields.negative) {
+                    md += `\n\n**Negative Constraint**\n> ${fields.negative}`;
+                }
+
+                if (state.referenceImages.length > 0) {
+                    md += `\n\n**Input Images**\n${state.referenceImages.map(img => `- ${img.url} (${img.intent})`).join('\n')}`;
+                }
+                result = md;
+            } else {
+                // PLAIN TEXT OUTPUT (Editing)
+                result = baseInstructions;
+                // For editing chat, we just list images at the end usually
+                if (state.referenceImages.length > 0) {
+                     result += `\n\n[Inputs: ${state.referenceImages.map(i => i.url).join(', ')}]`;
+                }
+                if (fields.negative) {
+                    result += `\n\n(Avoid: ${fields.negative})`;
+                }
+            }
+        }
     }
 
     setGeneratedPrompt(result);
   }, [state, outputLang, outputFormat]);
 
+  // --- Handlers ---
+
   const handleSelect = (category: string, value: string, isToggle = true) => {
     setState(prev => {
-        // Cast prev to any to allow dynamic property access/assignment without strict key checks
         const next = { ...prev } as any;
         if (!isToggle) {
            next[category] = value;
@@ -314,6 +444,10 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
     setState(prev => ({ ...prev, gender }));
   };
 
+  const handleTaskModeSelect = (mode: TaskMode) => {
+    setState(prev => ({ ...prev, taskMode: mode }));
+  };
+
   const toggleQualityTag = (tagValue: string) => {
     setState(prev => {
       const currentTags = prev.quality;
@@ -322,6 +456,17 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
       } else {
         return { ...prev, quality: [...currentTags, tagValue] };
       }
+    });
+  };
+
+  const togglePreservationTag = (tagValue: string) => {
+    setState(prev => {
+        const current = prev.preservation || [];
+        if (current.includes(tagValue)) {
+            return { ...prev, preservation: current.filter(t => t !== tagValue) };
+        } else {
+            return { ...prev, preservation: [...current, tagValue] };
+        }
     });
   };
 
@@ -341,17 +486,12 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
   const handleRandomizeAll = () => {
     const newValues: Partial<PortraitState> = {};
     PROMPT_CATEGORIES.forEach(cat => {
-      // Filter options by gender before randomizing
       const validOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
       if (validOptions.length > 0) {
-        // Fix for TS error: Type 'string' is not assignable to type 'Gender & string & string[]'
         (newValues as any)[cat.id] = validOptions[Math.floor(Math.random() * validOptions.length)].value;
       }
     });
-    setState(prev => ({
-      ...prev,
-      ...newValues
-    }));
+    setState(prev => ({ ...prev, ...newValues }));
   };
 
   const handleCopy = () => {
@@ -362,35 +502,41 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
   };
 
   const handleClear = () => {
-    setState({
-        gender: state.gender,
-        nationality: '',
-        age: '',
-        bodyType: '',
-        role: '',
-        faceShape: '',
-        eyeGaze: '',
-        hairColor: '',
-        hairStyle: '',
-        appearance: '',
-        clothing: '',
-        clothingDetail: '',
-        accessories: '',
-        action: '',
-        hands: '',
-        composition: '',
-        era: '',
-        environment: '',
-        lighting: '',
-        colorPalette: '',
-        camera: '',
-        artStyle: '',
-        mood: '',
-        aspectRatio: '',
+    setState(prev => ({
+        ...prev,
+        nationality: '', age: '', bodyType: '', role: '', faceShape: '', eyeGaze: '',
+        hairColor: '', hairStyle: '', appearance: '', clothing: '', clothingDetail: '',
+        accessories: '', action: '', hands: '', composition: '', era: '', environment: '',
+        lighting: '', colorPalette: '', camera: '', artStyle: '', mood: '', aspectRatio: '',
         quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
-        negativePrompt: ''
-    });
+        preservation: [],
+        negativePrompt: '',
+        referenceImages: []
+    }));
     setGeneratedPrompt('');
+  };
+
+  const addReferenceImage = () => {
+      const newImg: ReferenceImage = {
+          id: Date.now().toString(),
+          url: '',
+          intent: 'general'
+      };
+      setState(prev => ({...prev, referenceImages: [newImg, ...prev.referenceImages]}));
+  };
+
+  const updateReferenceImage = (id: string, updates: Partial<ReferenceImage>) => {
+      setState(prev => ({
+          ...prev,
+          referenceImages: prev.referenceImages.map(img => img.id === id ? {...img, ...updates} : img)
+      }));
+  };
+
+  const removeReferenceImage = (id: string) => {
+      setState(prev => ({
+          ...prev,
+          referenceImages: prev.referenceImages.filter(img => img.id !== id)
+      }));
   };
 
   // --- Icons ---
@@ -426,9 +572,17 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
   );
 
+  const ImageIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+  );
+
+  const ShieldIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+  );
+
   // Group Icons
   const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-  const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>;
+  const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>;
   const MapIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>;
   const CameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
 
@@ -444,14 +598,12 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
       id: 'appearance',
       title: '外觀造型 (Appearance)',
       icon: <SparklesIcon />,
-      // Added: bodyType, eyeGaze, clothingDetail
       categoryIds: ['bodyType', 'faceShape', 'eyeGaze', 'hairColor', 'hairStyle', 'appearance', 'clothing', 'clothingDetail', 'accessories']
     },
     {
       id: 'scene',
       title: '動作與場景 (Scene & Action)',
       icon: <MapIcon />,
-      // Added: hands
       categoryIds: ['action', 'hands', 'composition', 'era', 'environment']
     },
     {
@@ -468,7 +620,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
     <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex flex-col gap-3">
         <div className="flex justify-between items-center">
             <span className="text-xs font-mono text-slate-400 uppercase flex items-center gap-2">
-                <CodeIcon /> 輸出設定
+                <CodeIcon /> {state.taskMode === 'editing' ? '編輯指令 (Instructions)' : '提示詞 (Prompt)'}
             </span>
             <button 
                 onClick={handleClear}
@@ -502,7 +654,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
                     onClick={() => setOutputFormat('text')}
                     className={`flex-1 py-1.5 px-2 text-xs font-medium rounded transition-all ${outputFormat === 'text' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
-                    Prompt
+                    Text
                 </button>
                 <button 
                     onClick={() => setOutputFormat('json')}
@@ -538,7 +690,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
               人像提示詞大師
             </h1>
             <p className="text-slate-400 mt-2">
-              為 Midjourney、Stable Diffusion 或 LLM 打造專業提示詞。
+              為 Nano Banana Pro (Gemini) 打造專業產圖與修圖指令。
             </p>
           </div>
           <button
@@ -552,7 +704,92 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
 
         {/* Left Column: Controls */}
         <div className="lg:col-span-7 space-y-6">
+            
+          {/* TASK MODE SWITCH */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2 flex">
+              <button
+                onClick={() => handleTaskModeSelect('generation')}
+                className={`flex-1 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2
+                    ${state.taskMode === 'generation' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}
+                `}
+              >
+                  <SparklesIcon /> 文生圖 (Generation)
+              </button>
+              <button
+                onClick={() => handleTaskModeSelect('editing')}
+                className={`flex-1 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2
+                    ${state.taskMode === 'editing' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}
+                `}
+              >
+                  <ImageIcon /> 圖生圖/修圖 (Editing)
+              </button>
+          </div>
           
+          {/* Reference Images Section */}
+          <div className={`transition-all duration-300 ${state.taskMode === 'editing' ? 'ring-2 ring-emerald-500/30 rounded-xl' : ''}`}>
+             <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-2">
+                       <ImageIcon /> {state.taskMode === 'editing' ? '輸入圖片 (Input Images)' : '參考圖片 (References)'}
+                    </h3>
+                    <button 
+                       onClick={addReferenceImage}
+                       className="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-400 px-3 py-1.5 rounded-full transition-colors font-medium border border-indigo-500/30"
+                    >
+                       + 新增圖片
+                    </button>
+                </div>
+                
+                {state.referenceImages.length === 0 ? (
+                    <div className="text-center py-8 border-2 border-dashed border-slate-800 rounded-lg text-slate-600 text-sm">
+                        {state.taskMode === 'editing' 
+                            ? '請新增要修改的原始圖片'
+                            : '可選：新增參考圖片以控制風格或構圖'
+                        }
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {state.referenceImages.map(img => (
+                            <ReferenceImageCard 
+                                key={img.id} 
+                                image={img} 
+                                onUpdate={updateReferenceImage}
+                                onRemove={removeReferenceImage}
+                            />
+                        ))}
+                    </div>
+                )}
+             </div>
+          </div>
+
+          {/* Preservation Tags (Only relevant for Editing) */}
+          {state.taskMode === 'editing' && (
+            <div className="bg-slate-900/80 border border-emerald-500/30 rounded-xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+                    <ShieldIcon />
+                </div>
+                <h3 className="text-sm uppercase tracking-wider text-emerald-500 font-semibold mb-3 flex items-center gap-2">
+                   <ShieldIcon /> 保留特徵 (Preserve Attributes)
+                </h3>
+                <p className="text-xs text-slate-500 mb-3">告訴 AI 哪些部分<b>絕對不要</b>修改。</p>
+                <div className="flex flex-wrap gap-2">
+                {PRESERVATION_OPTIONS.map(tag => (
+                    <button
+                    key={tag.value}
+                    onClick={() => togglePreservationTag(tag.value)}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-all font-medium
+                        ${state.preservation.includes(tag.value) 
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-900/50' 
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300'}
+                    `}
+                    >
+                    {tag.label}
+                    </button>
+                ))}
+                </div>
+            </div>
+          )}
+
           {/* Gender Selector */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-2">
@@ -568,7 +805,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <FemaleIcon /> 女性 Female
+                <FemaleIcon /> 女性
               </button>
               <button
                 onClick={() => handleGenderSelect('male')}
@@ -578,38 +815,39 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <MaleIcon /> 男性 Male
+                <MaleIcon /> 男性
               </button>
             </div>
           </div>
 
-          {/* Quality Tags (Quick Select) */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
-            <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-3">
-              畫質增強 (Quality)
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {QUALITY_TAGS.map(tag => (
-                <button
-                  key={tag.value}
-                  onClick={() => toggleQualityTag(tag.value)}
-                  className={`px-2 py-1 text-xs rounded-full border transition-all
-                    ${state.quality.includes(tag.value) 
-                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' 
-                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}
-                  `}
-                >
-                  {tag.label}
-                </button>
-              ))}
+          {/* Quality Tags (Only relevant for Generation) */}
+          {state.taskMode === 'generation' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
+                <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-3">
+                畫質增強 (Quality)
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                {QUALITY_TAGS.map(tag => (
+                    <button
+                    key={tag.value}
+                    onClick={() => toggleQualityTag(tag.value)}
+                    className={`px-2 py-1 text-xs rounded-full border transition-all
+                        ${state.quality.includes(tag.value) 
+                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' 
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}
+                    `}
+                    >
+                    {tag.label}
+                    </button>
+                ))}
+                </div>
             </div>
-          </div>
+          )}
 
           {/* Negative Prompt */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 border-l-4 border-l-red-500/50">
              <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-3 flex items-center justify-between">
               負面提示詞 (Negative Prompts)
-              <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">排除不想要的元素</span>
              </h3>
              <textarea
                 value={state.negativePrompt}
@@ -637,19 +875,17 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
                 key={group.id} 
                 title={group.title} 
                 icon={group.icon}
-                defaultOpen={index === 0} // Only open the first group by default for cleaner UI
+                defaultOpen={index === 0}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {group.categoryIds.map(catId => {
                     const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
                     if (!cat) return null;
 
-                    // Filter options: Keep only those with no gender specified or matching current gender
                     const filteredOptions = cat.options.filter(
                       opt => !opt.gender || opt.gender === state.gender
                     );
                     
-                    // Only render category if there are options available
                     if (filteredOptions.length === 0) return null;
 
                     const filteredCategory = { ...cat, options: filteredOptions };
@@ -673,7 +909,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
         <div className="hidden lg:block lg:col-span-5 space-y-6 lg:sticky lg:top-8 h-fit">
           
           {/* Prompt Output Box */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border ${state.taskMode === 'editing' ? 'border-emerald-500/30' : 'border-slate-700'} shadow-2xl overflow-hidden flex flex-col`}>
             <OutputToolbar />
             
             <div className="p-4 min-h-[300px] relative group bg-slate-900/50">
@@ -709,8 +945,10 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
 
           
           <div className="text-xs text-slate-500 text-center px-4">
-            * 提示詞 (Prompt)：適用於 Midjourney, Stable Diffusion。<br/>
-            * 格式化輸出：適用於 API 串接、筆記或對話式 AI。
+             {state.taskMode === 'editing' 
+                ? '* 修圖提示詞：適用於 Gemini, Stable Diffusion Inpainting。' 
+                : '* 產圖提示詞：適用於 Nano Banana Pro, Midjourney, SD。'
+             }
           </div>
         </div>
       </div>
@@ -740,7 +978,9 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
       {isMobilePreviewOpen && (
           <div className="fixed inset-0 bg-slate-950 z-50 flex flex-col animate-fade-in lg:hidden">
               <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-900">
-                  <h3 className="text-lg font-semibold text-white">生成的提示詞</h3>
+                  <h3 className="text-lg font-semibold text-white">
+                      {state.taskMode === 'editing' ? '編輯指令' : '生成的提示詞'}
+                  </h3>
                   <button 
                     onClick={() => setIsMobilePreviewOpen(false)}
                     className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white"
@@ -750,7 +990,6 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
               </div>
               
               <div className="flex-1 overflow-auto bg-slate-900">
-                   {/* Reuse Logic for Toolbar inside modal or simplified */}
                    <OutputToolbar />
                    <div className="p-4 h-full">
                         <textarea
@@ -768,7 +1007,7 @@ ${fields.quality.map(q => `- ${q}`).join('\n')}
                         copied ? 'bg-emerald-600' : 'bg-indigo-600'
                     }`}
                  >
-                    <CopyIcon /> {copied ? '已複製' : '複製提示詞'}
+                    <CopyIcon /> {copied ? '已複製' : '複製'}
                  </button>
               </div>
           </div>
