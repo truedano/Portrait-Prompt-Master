@@ -41,7 +41,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'bodyType',
     label: '體型 (Body Type)',
-    description: '人物的身材輪廓',
+    description: '人物的身材輪廓 (可多選)',
+    multiSelect: true,
     options: [
       { label: '健美/肌肉 (Athletic)', value: 'athletic body, muscular' },
       { label: '豐滿/曲線 (Curvy)', value: 'curvy body, voluptuous', gender: 'female' },
@@ -107,7 +108,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'hairColor',
     label: '髮色 (Hair Color)',
-    description: '頭髮的顏色',
+    description: '頭髮的顏色 (可多選混搭)',
+    multiSelect: true,
     options: [
       { label: '黑色', value: 'black hair' },
       { label: '金色 (Blonde)', value: 'blonde hair' },
@@ -125,7 +127,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'hairStyle',
     label: '髮型 (Hair Style)',
-    description: '頭髮的造型',
+    description: '頭髮的造型 (可多選)',
+    multiSelect: true,
     options: [
       { label: '長直髮', value: 'long straight hair' },
       { label: '波浪捲髮', value: 'wavy curly hair' },
@@ -146,7 +149,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'appearance',
     label: '外觀細節 (Features)',
-    description: '皮膚、眼睛與其他特徵',
+    description: '皮膚、眼睛與其他特徵 (可多選)',
+    multiSelect: true,
     options: [
       { label: '白皙皮膚', value: 'pale skin' },
       { label: '小麥色皮膚', value: 'tanned skin' },
@@ -175,7 +179,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'clothing',
     label: '服裝 (Clothing)',
-    description: '穿著風格',
+    description: '穿著風格 (可多選混搭)',
+    multiSelect: true,
     options: [
       { label: '白襯衫', value: 'white button-up shirt' },
       { label: '寬鬆帽T', value: 'oversized hoodie' },
@@ -200,7 +205,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'clothingDetail',
     label: '服裝材質 (Texture)',
-    description: '衣物的布料與質感',
+    description: '衣物的布料與質感 (可多選)',
+    multiSelect: true,
     options: [
       { label: '緊身衣物', value: 'tight fitting clothes' },
       { label: '深 V 領口', value: 'plunging neckline', gender: 'female' },
@@ -220,7 +226,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'accessories',
     label: '飾品與配件 (Accessories)',
-    description: '增加人物豐富度',
+    description: '增加人物豐富度 (可多選)',
+    multiSelect: true,
     options: [
       { label: '金屬框眼鏡', value: 'wearing metal rim glasses' },
       { label: '墨鏡', value: 'wearing sunglasses' },
@@ -293,6 +300,42 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: 'GoPro', value: 'GoPro wide view' }
     ]
   },
+  // New: Camera Movement for Video
+  {
+    id: 'cameraMovement',
+    label: '運鏡方式 (Camera Move)',
+    description: '影片專用：鏡頭移動方式',
+    options: [
+      { label: '推進 (Dolly In)', value: 'camera dolly in' },
+      { label: '拉遠 (Dolly Out)', value: 'camera dolly out' },
+      { label: '左搖 (Pan Left)', value: 'camera pan left' },
+      { label: '右搖 (Pan Right)', value: 'camera pan right' },
+      { label: '上搖 (Tilt Up)', value: 'camera tilt up' },
+      { label: '下搖 (Tilt Down)', value: 'camera tilt down' },
+      { label: '跟拍 (Tracking)', value: 'camera tracking shot' },
+      { label: '環繞 (Orbit)', value: 'camera circling around subject' },
+      { label: '希區考克變焦 (Dolly Zoom)', value: 'dolly zoom effect' },
+      { label: '空拍 (Drone)', value: 'drone shot' },
+      { label: 'FPV 穿越', value: 'FPV drone view' },
+      { label: '手持晃動', value: 'handheld camera movement' },
+      { label: '固定鏡頭', value: 'static camera' }
+    ]
+  },
+  // New: Motion Strength for Video
+  {
+    id: 'motionStrength',
+    label: '動態強度 (Motion Strength)',
+    description: '影片專用：動作幅度',
+    options: [
+      { label: '微動 (Subtle)', value: 'subtle motion' },
+      { label: '正常 (Normal)', value: 'normal motion' },
+      { label: '動態 (Dynamic)', value: 'dynamic motion' },
+      { label: '高強度 (High)', value: 'high motion' },
+      { label: '慢動作 (Slow Mo)', value: 'slow motion' },
+      { label: '縮時 (Timelapse)', value: 'timelapse' },
+      { label: '極速 (Hyperlapse)', value: 'hyperlapse' }
+    ]
+  },
   {
     id: 'environment',
     label: '背景環境 (Environment)',
@@ -333,7 +376,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'lighting',
     label: '光影 (Lighting)',
-    description: '決定氛圍的關鍵',
+    description: '決定氛圍的關鍵 (可多選混搭)',
+    multiSelect: true,
     options: [
       { label: '自然光', value: 'natural lighting' },
       { label: '窗光', value: 'window light' },
@@ -369,7 +413,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'artStyle',
     label: '藝術風格 (Style)',
-    description: '圖片的整體質感',
+    description: '圖片的整體質感 (可多選混搭)',
+    multiSelect: true,
     options: [
       { label: '極致寫實 (Photo)', value: 'Photorealistic, 8k, raw photo' },
       { label: '電影截圖', value: 'Cinematic film still' },
@@ -400,7 +445,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
   {
     id: 'mood',
     label: '情緒 (Mood)',
-    description: '圖片傳達的感覺',
+    description: '圖片傳達的感覺 (可多選)',
+    multiSelect: true,
     options: [
       { label: '快樂', value: 'happy, smiling' },
       { label: '悲傷', value: 'sad, crying' },

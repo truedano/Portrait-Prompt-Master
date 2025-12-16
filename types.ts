@@ -1,7 +1,7 @@
 
 export type Gender = 'female' | 'male';
 
-export type TaskMode = 'generation' | 'editing';
+export type TaskMode = 'generation' | 'editing' | 'video_generation';
 
 // Replaces Midjourney ReferenceType with Gemini Editing Intents
 export type EditingIntent = 'general' | 'high_denoising' | 'keep_subject' | 'keep_composition';
@@ -13,34 +13,43 @@ export interface ReferenceImage {
 }
 
 export interface PortraitState {
-  taskMode: TaskMode; // New: Switch between Gen/Edit
+  taskMode: TaskMode;
   gender: Gender;
   referenceImages: ReferenceImage[]; 
   nationality: string;
   age: string;
-  bodyType: string;
+  
+  // Multi-selectable fields changed to string[]
+  bodyType: string[]; 
   role: string;
   faceShape: string;
   eyeGaze: string;
-  hairColor: string;
-  hairStyle: string;
-  appearance: string;
-  clothing: string;
-  clothingDetail: string;
-  accessories: string;
+  hairColor: string[];
+  hairStyle: string[];
+  appearance: string[];
+  clothing: string[];
+  clothingDetail: string[];
+  accessories: string[];
+  
   action: string;
   hands: string;
   composition: string;
   era: string;
   environment: string;
-  lighting: string;
+  
+  // Multi-selectable fields
+  lighting: string[];
   colorPalette: string;
   camera: string;
-  artStyle: string;
-  mood: string;
+  artStyle: string[];
+  mood: string[];
+  
   aspectRatio: string;
+  cameraMovement: string;
+  motionStrength: string;
+  
   quality: string[];
-  preservation: string[]; // New: For editing mode
+  preservation: string[];
   negativePrompt: string;
 }
 

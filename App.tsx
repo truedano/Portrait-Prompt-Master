@@ -14,27 +14,29 @@ const App: React.FC = () => {
     referenceImages: [],
     nationality: '',
     age: '',
-    bodyType: '',
+    bodyType: [], // Multi
     role: '',
     faceShape: '',
     eyeGaze: '',
-    hairColor: '',
-    hairStyle: '',
-    appearance: '',
-    clothing: '',
-    clothingDetail: '',
-    accessories: '', 
+    hairColor: [], // Multi
+    hairStyle: [], // Multi
+    appearance: [], // Multi
+    clothing: [], // Multi
+    clothingDetail: [], // Multi
+    accessories: [], // Multi
     action: '',
     hands: '',
     composition: '', 
     era: '', 
     environment: '',
-    lighting: '',
+    lighting: [], // Multi
     colorPalette: '', 
     camera: '',
-    artStyle: '',
-    mood: '',
+    artStyle: [], // Multi
+    mood: [], // Multi
     aspectRatio: '',
+    cameraMovement: '', 
+    motionStrength: '', 
     quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
     preservation: [],
     negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur'
@@ -77,6 +79,13 @@ const App: React.FC = () => {
     return value;
   };
 
+  const resolveField = (key: keyof PortraitState | 'quality' | 'preservation', val: string | string[], lang: OutputLanguage) => {
+    if (Array.isArray(val)) {
+        return val.map(v => getTerm(key, v, lang)).filter(Boolean).join(', ');
+    }
+    return getTerm(key, val, lang);
+  };
+
   // --- Logic ---
 
   useEffect(() => {
@@ -89,32 +98,34 @@ const App: React.FC = () => {
 
     // Localized fields for output
     const fields = {
-      quality: state.quality.map(q => getTerm('quality', q, outputLang)),
-      preservation: state.preservation.map(p => getTerm('preservation', p, outputLang)),
-      nationality: getTerm('nationality', state.nationality, outputLang),
-      age: getTerm('age', state.age, outputLang),
-      bodyType: getTerm('bodyType', state.bodyType, outputLang),
+      quality: resolveField('quality', state.quality, outputLang),
+      preservation: resolveField('preservation', state.preservation, outputLang),
+      nationality: resolveField('nationality', state.nationality, outputLang),
+      age: resolveField('age', state.age, outputLang),
+      bodyType: resolveField('bodyType', state.bodyType, outputLang),
       gender: outputLang === 'en' ? genderTermEn : genderTermZh,
-      role: getTerm('role', state.role, outputLang),
-      faceShape: getTerm('faceShape', state.faceShape, outputLang),
-      eyeGaze: getTerm('eyeGaze', state.eyeGaze, outputLang),
-      hairColor: getTerm('hairColor', state.hairColor, outputLang),
-      hairStyle: getTerm('hairStyle', state.hairStyle, outputLang),
-      appearance: getTerm('appearance', state.appearance, outputLang),
-      clothing: getTerm('clothing', state.clothing, outputLang),
-      clothingDetail: getTerm('clothingDetail', state.clothingDetail, outputLang),
-      accessories: getTerm('accessories', state.accessories, outputLang),
-      action: getTerm('action', state.action, outputLang),
-      hands: getTerm('hands', state.hands, outputLang),
-      composition: getTerm('composition', state.composition, outputLang),
-      era: getTerm('era', state.era, outputLang),
-      environment: getTerm('environment', state.environment, outputLang),
-      lighting: getTerm('lighting', state.lighting, outputLang),
-      colorPalette: getTerm('colorPalette', state.colorPalette, outputLang),
-      camera: getTerm('camera', state.camera, outputLang),
-      artStyle: getTerm('artStyle', state.artStyle, outputLang),
-      mood: getTerm('mood', state.mood, outputLang),
-      aspectRatio: getTerm('aspectRatio', state.aspectRatio, outputLang),
+      role: resolveField('role', state.role, outputLang),
+      faceShape: resolveField('faceShape', state.faceShape, outputLang),
+      eyeGaze: resolveField('eyeGaze', state.eyeGaze, outputLang),
+      hairColor: resolveField('hairColor', state.hairColor, outputLang),
+      hairStyle: resolveField('hairStyle', state.hairStyle, outputLang),
+      appearance: resolveField('appearance', state.appearance, outputLang),
+      clothing: resolveField('clothing', state.clothing, outputLang),
+      clothingDetail: resolveField('clothingDetail', state.clothingDetail, outputLang),
+      accessories: resolveField('accessories', state.accessories, outputLang),
+      action: resolveField('action', state.action, outputLang),
+      hands: resolveField('hands', state.hands, outputLang),
+      composition: resolveField('composition', state.composition, outputLang),
+      era: resolveField('era', state.era, outputLang),
+      environment: resolveField('environment', state.environment, outputLang),
+      lighting: resolveField('lighting', state.lighting, outputLang),
+      colorPalette: resolveField('colorPalette', state.colorPalette, outputLang),
+      camera: resolveField('camera', state.camera, outputLang),
+      artStyle: resolveField('artStyle', state.artStyle, outputLang),
+      mood: resolveField('mood', state.mood, outputLang),
+      aspectRatio: resolveField('aspectRatio', state.aspectRatio, outputLang),
+      cameraMovement: resolveField('cameraMovement', state.cameraMovement, outputLang),
+      motionStrength: resolveField('motionStrength', state.motionStrength, outputLang),
       negative: state.negativePrompt
     };
 
@@ -126,7 +137,7 @@ const App: React.FC = () => {
             meta: { 
                 language: outputLang, 
                 task_mode: state.taskMode, 
-                engine: "gemini_nano_banana_pro" 
+                engine: state.taskMode === 'video_generation' ? "veo/sora" : "gemini_nano_banana_pro" 
             },
             input_images: state.referenceImages.map(img => ({
                 url: img.url,
@@ -134,8 +145,8 @@ const App: React.FC = () => {
             })),
             prompt_content: {
                 subject: { ...fields, quality: undefined, preservation: undefined, negative: undefined }, // Spread all fields
-                preservation: fields.preservation,
-                quality_tags: fields.quality
+                preservation: state.preservation.map(p => getTerm('preservation', p, outputLang)),
+                quality_tags: state.quality.map(q => getTerm('quality', q, outputLang))
             },
             negative_prompt: fields.negative
         };
@@ -148,7 +159,7 @@ const App: React.FC = () => {
             lines.push(`meta:`);
             lines.push(`  mode: ${state.taskMode}`);
             lines.push(`  language: ${outputLang}`);
-            lines.push(`  engine: gemini_nano_banana_pro`);
+            lines.push(`  engine: ${state.taskMode === 'video_generation' ? "veo" : "gemini_nano_banana_pro"}`);
 
             if (state.referenceImages.length > 0) {
                 lines.push(`images:`);
@@ -171,6 +182,10 @@ const App: React.FC = () => {
                 accessories: fields.accessories,
                 action_pose: fields.action,
                 hand_interaction: fields.hands,
+                // Video Specifics
+                camera_movement: fields.cameraMovement,
+                motion_strength: fields.motionStrength,
+                // End Video Specifics
                 scene_environment: [fields.environment, fields.era].filter(Boolean).join(', '),
                 composition_angle: fields.composition,
                 camera_lens: fields.camera,
@@ -178,22 +193,15 @@ const App: React.FC = () => {
                 color_tone: fields.colorPalette,
                 art_style: fields.artStyle,
                 mood_emotion: fields.mood,
-                preservation: fields.preservation,
-                quality_tags: fields.quality,
+                preservation: fields.preservation, // This is now a comma string
+                quality_tags: fields.quality, // This is now a comma string
                 aspect_ratio: fields.aspectRatio
             };
 
             // Write fields that have values
             Object.entries(yamlFields).forEach(([key, val]) => {
                 if (!val || (Array.isArray(val) && val.length === 0)) return;
-                
-                if (Array.isArray(val)) {
-                    // For arrays like quality tags
-                    lines.push(`  ${key}: [${val.map(v => `"${v}"`).join(', ')}]`);
-                } else {
-                    // For strings, handle basic quoting
-                    lines.push(`  ${key}: "${val}"`);
-                }
+                lines.push(`  ${key}: "${val}"`);
             });
 
             if (fields.negative) {
@@ -205,8 +213,49 @@ const App: React.FC = () => {
     } 
     // --- Text / Markdown Output ---
     else {
-        // A. GENERATION MODE (Descriptive)
-        if (state.taskMode === 'generation') {
+        // A. VIDEO GENERATION MODE
+        if (state.taskMode === 'video_generation') {
+            const subjectEn = [state.nationality, state.age, state.gender === 'female' ? 'woman' : 'man', state.role].filter(Boolean).join(' ');
+            const subjectZh = [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join('');
+            const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+
+            // Video Structure: [Camera Move] + [Subject] + [Action/Motion] + [Environment] + [Style/Quality]
+            const parts = [
+                fields.cameraMovement,   // 1. Camera Movement (The Soul of Video)
+                mainSubject,             // 2. Who
+                fields.environment,      // 3. Where (Context usually comes early for video establishment)
+                fields.action,           // 4. Action
+                fields.motionStrength,   // 5. Motion Dynamics
+                fields.clothing,
+                fields.clothingDetail,
+                fields.appearance,
+                fields.hairColor, 
+                fields.hairStyle,
+                fields.eyeGaze,
+                fields.composition,
+                fields.camera,
+                fields.lighting,
+                fields.era,
+                fields.artStyle,
+                fields.mood,
+                fields.colorPalette,
+                fields.quality,
+            ].filter(Boolean);
+
+            const separator = outputLang === 'en' ? ', ' : '，';
+            const basePrompt = parts.join(separator);
+
+            if (outputFormat === 'markdown') {
+                let md = `**Video Prompt**\n> ${basePrompt}`;
+                if (fields.negative) md += `\n\n**Negative Prompt**\n> ${fields.negative}`;
+                result = md;
+            } else {
+                result = basePrompt;
+                if (fields.negative) result += `\n\n--no ${fields.negative}`;
+            }
+        }
+        // B. IMAGE GENERATION MODE (Descriptive)
+        else if (state.taskMode === 'generation') {
             const subjectEn = [state.nationality, state.age, state.gender === 'female' ? 'woman' : 'man', state.role].filter(Boolean).join(' ');
             const subjectZh = [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join('');
             const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
@@ -233,8 +282,8 @@ const App: React.FC = () => {
                 fields.artStyle,         // 7. Artistic Style
                 fields.mood,
                 fields.colorPalette,
-                ...fields.quality,       // 8. Quality Boosters
-                fields.aspectRatio       // 9. Tech specs
+                fields.quality,       // 8. Quality Boosters
+                fields.aspectRatio       // 9. Tech specs (Resolution last for images)
             ].filter(Boolean);
 
             const separator = outputLang === 'en' ? ', ' : '，';
@@ -263,7 +312,7 @@ const App: React.FC = () => {
                 }
             }
         } 
-        // B. EDITING MODE (Instructional)
+        // C. EDITING MODE (Instructional)
         else {
             const instructions: string[] = [];
 
@@ -283,10 +332,10 @@ const App: React.FC = () => {
 
             // 2. Process Preservation (Positive Constraint)
             if (fields.preservation.length > 0) {
-                const keepItems = fields.preservation.join(outputLang === 'en' ? ', ' : '、');
+                // fields.preservation is already joined string
                 instructions.push(outputLang === 'en' 
-                    ? `Ensure the ${keepItems} remain unchanged.` 
-                    : `確保${keepItems}保持不變。`);
+                    ? `Ensure the ${fields.preservation} remain unchanged.` 
+                    : `確保${fields.preservation}保持不變。`);
             }
 
             // 3. Build Instructions from fields (With Conflict Checks)
@@ -299,6 +348,8 @@ const App: React.FC = () => {
                 if (raw.age) demographicParts.push(fields.age);
                 if (raw.gender) demographicParts.push(fields.gender);
                 if (raw.faceShape) demographicParts.push(fields.faceShape);
+                // Body type change implies character change
+                if (fields.bodyType) demographicParts.push(fields.bodyType);
 
                 if (demographicParts.length > 0) {
                     const desc = demographicParts.join(' ');
@@ -316,13 +367,13 @@ const App: React.FC = () => {
             }
 
             // Hair
-            if ((raw.hairColor || raw.hairStyle) && !isPreserved('hair style')) {
+            if ((raw.hairColor.length > 0 || raw.hairStyle.length > 0) && !isPreserved('hair style')) {
                  const hair = [fields.hairColor, fields.hairStyle].filter(Boolean).join(' ');
                  instructions.push(outputLang === 'en' ? `Change hair to ${hair}.` : `將髮型改為${hair}。`);
             }
 
             // Change Clothing
-            if ((raw.clothing || raw.clothingDetail) && !isPreserved('clothing')) {
+            if ((raw.clothing.length > 0 || raw.clothingDetail.length > 0) && !isPreserved('clothing')) {
                 const cloth = [fields.clothing, fields.clothingDetail].filter(Boolean).join(' ');
                 instructions.push(outputLang === 'en' 
                     ? `Change the outfit to ${cloth}.` 
@@ -330,7 +381,7 @@ const App: React.FC = () => {
             }
 
             // Add Accessories (Usually safe to add even if clothing is preserved, unless specific conflict)
-            if (raw.accessories) {
+            if (raw.accessories.length > 0) {
                 instructions.push(outputLang === 'en' 
                     ? `Add ${fields.accessories} to the character.` 
                     : `為角色添加${fields.accessories}。`);
@@ -367,7 +418,7 @@ const App: React.FC = () => {
             }
 
             // Change Style
-            if (raw.artStyle) {
+            if (raw.artStyle.length > 0) {
                 instructions.push(outputLang === 'en' 
                     ? `Transform the style to ${fields.artStyle}.` 
                     : `將風格轉換為${fields.artStyle}。`);
@@ -375,14 +426,14 @@ const App: React.FC = () => {
 
             // Change Mood/Expression
             // If face is preserved, changing expression is tricky but possible. We allow it.
-            if (raw.mood) {
+            if (raw.mood.length > 0) {
                 instructions.push(outputLang === 'en' 
                     ? `Make the character look ${fields.mood}.` 
                     : `讓角色看起來${fields.mood}。`);
             }
 
             // Change Lighting
-            if (raw.lighting && !isPreserved('lighting conditions')) {
+            if (raw.lighting.length > 0 && !isPreserved('lighting conditions')) {
                 instructions.push(outputLang === 'en' 
                     ? `Apply ${fields.lighting}.` 
                     : `應用${fields.lighting}。`);
@@ -430,13 +481,36 @@ const App: React.FC = () => {
 
   const handleSelect = (category: string, value: string, isToggle = true) => {
     setState(prev => {
-        const next = { ...prev } as any;
-        if (!isToggle) {
-           next[category] = value;
+        const currentVal = (prev as any)[category];
+        // Check if the category definition allows multiSelect
+        const catConfig = PROMPT_CATEGORIES.find(c => c.id === category);
+        const isMulti = catConfig?.multiSelect;
+
+        if (isMulti && Array.isArray(currentVal)) {
+            // Multi-select logic
+            // If isToggle is false (e.g. Random button), we might want to just set it or add it.
+            // But usually Random replaces or adds. Let's make Random REPLACE for simplicity in this specific app UX to avoid clutter,
+            // OR make it ADD. Given "Random" usually implies "Pick this one thing", let's make random replace unless it's a chip click.
+            
+            if (!isToggle) {
+                // Force set (replace all) - mainly for Custom Input or Random replacement
+                // If it's custom input, we probably want to append? No, usually replace is safer to avoid duplicates unless user intends.
+                // Actually, for multi-select, "Random" usually adds 1 random item, but clearing previous is cleaner for "I'm feeling lucky".
+                // Let's stick to: Custom Input = Add? No, Custom Input replaces specific value usually.
+                // Let's make it: Custom/Random replaces for now.
+                return { ...prev, [category]: [value] };
+            }
+
+            const exists = currentVal.includes(value);
+            const newValue = exists
+                    ? currentVal.filter(v => v !== value)
+                    : [...currentVal, value];
+            return { ...prev, [category]: newValue };
         } else {
-           next[category] = next[category] === value ? '' : value;
+            // Single select logic (existing)
+            if (!isToggle) return { ...prev, [category]: value };
+            return { ...prev, [category]: currentVal === value ? '' : value };
         }
-        return next;
     });
   };
 
@@ -486,9 +560,18 @@ const App: React.FC = () => {
   const handleRandomizeAll = () => {
     const newValues: Partial<PortraitState> = {};
     PROMPT_CATEGORIES.forEach(cat => {
+      // Logic for hiding fields should also apply to randomization to avoid setting hidden values
+      if (state.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
+      if (state.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
+
       const validOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
       if (validOptions.length > 0) {
-        (newValues as any)[cat.id] = validOptions[Math.floor(Math.random() * validOptions.length)].value;
+        const randomVal = validOptions[Math.floor(Math.random() * validOptions.length)].value;
+        if (cat.multiSelect) {
+             (newValues as any)[cat.id] = [randomVal];
+        } else {
+             (newValues as any)[cat.id] = randomVal;
+        }
       }
     });
     setState(prev => ({ ...prev, ...newValues }));
@@ -504,10 +587,11 @@ const App: React.FC = () => {
   const handleClear = () => {
     setState(prev => ({
         ...prev,
-        nationality: '', age: '', bodyType: '', role: '', faceShape: '', eyeGaze: '',
-        hairColor: '', hairStyle: '', appearance: '', clothing: '', clothingDetail: '',
-        accessories: '', action: '', hands: '', composition: '', era: '', environment: '',
-        lighting: '', colorPalette: '', camera: '', artStyle: '', mood: '', aspectRatio: '',
+        nationality: '', age: '', bodyType: [], role: '', faceShape: '', eyeGaze: '',
+        hairColor: [], hairStyle: [], appearance: [], clothing: [], clothingDetail: [],
+        accessories: [], action: '', hands: '', composition: '', era: '', environment: '',
+        lighting: [], colorPalette: '', camera: '', artStyle: [], mood: [], aspectRatio: '',
+        cameraMovement: '', motionStrength: '', 
         quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
         preservation: [],
         negativePrompt: '',
@@ -580,6 +664,10 @@ const App: React.FC = () => {
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
   );
 
+  const VideoIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+  );
+
   // Group Icons
   const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
   const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>;
@@ -604,13 +692,15 @@ const App: React.FC = () => {
       id: 'scene',
       title: '動作與場景 (Scene & Action)',
       icon: <MapIcon />,
-      categoryIds: ['action', 'hands', 'composition', 'era', 'environment']
+      // Add motionStrength to scene group
+      categoryIds: ['action', 'motionStrength', 'hands', 'composition', 'era', 'environment']
     },
     {
       id: 'style',
       title: '風格與攝影 (Style & Camera)',
       icon: <CameraIcon />,
-      categoryIds: ['lighting', 'colorPalette', 'artStyle', 'camera', 'mood', 'aspectRatio']
+      // Add cameraMovement to style group
+      categoryIds: ['lighting', 'colorPalette', 'artStyle', 'camera', 'cameraMovement', 'mood', 'aspectRatio']
     }
   ];
 
@@ -620,7 +710,10 @@ const App: React.FC = () => {
     <div className="p-3 bg-slate-950/80 border-b border-slate-800 flex flex-col gap-3">
         <div className="flex justify-between items-center">
             <span className="text-xs font-mono text-slate-400 uppercase flex items-center gap-2">
-                <CodeIcon /> {state.taskMode === 'editing' ? '編輯指令 (Instructions)' : '提示詞 (Prompt)'}
+                <CodeIcon /> 
+                {state.taskMode === 'editing' ? '編輯指令 (Instructions)' : 
+                 state.taskMode === 'video_generation' ? '影片提示詞 (Video Prompt)' :
+                 '繪圖提示詞 (Image Prompt)'}
             </span>
             <button 
                 onClick={handleClear}
@@ -706,22 +799,30 @@ const App: React.FC = () => {
         <div className="lg:col-span-7 space-y-6">
             
           {/* TASK MODE SWITCH */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2 flex">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-2 flex gap-1 overflow-x-auto">
               <button
                 onClick={() => handleTaskModeSelect('generation')}
-                className={`flex-1 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2
-                    ${state.taskMode === 'generation' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}
+                className={`flex-1 min-w-[120px] py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 text-sm
+                    ${state.taskMode === 'generation' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}
                 `}
               >
-                  <SparklesIcon /> 文生圖 (Generation)
+                  <SparklesIcon /> 文生圖
+              </button>
+              <button
+                onClick={() => handleTaskModeSelect('video_generation')}
+                className={`flex-1 min-w-[120px] py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 text-sm
+                    ${state.taskMode === 'video_generation' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}
+                `}
+              >
+                  <VideoIcon /> 文生影片
               </button>
               <button
                 onClick={() => handleTaskModeSelect('editing')}
-                className={`flex-1 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2
-                    ${state.taskMode === 'editing' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}
+                className={`flex-1 min-w-[120px] py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 text-sm
+                    ${state.taskMode === 'editing' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}
                 `}
               >
-                  <ImageIcon /> 圖生圖/修圖 (Editing)
+                  <ImageIcon /> 修圖
               </button>
           </div>
           
@@ -820,8 +921,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Quality Tags (Only relevant for Generation) */}
-          {state.taskMode === 'generation' && (
+          {/* Quality Tags (Hidden for Editing mode, kept for Video/Image) */}
+          {state.taskMode !== 'editing' && (
             <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
                 <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-3">
                 畫質增強 (Quality)
@@ -882,6 +983,15 @@ const App: React.FC = () => {
                     const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
                     if (!cat) return null;
 
+                    // CONDITIONAL RENDERING LOGIC FOR MODES
+                    if (state.taskMode === 'video_generation') {
+                        // In Video Mode: Hide Aspect Ratio (usually fixed), Show Video specific fields
+                        if (cat.id === 'aspectRatio') return null;
+                    } else {
+                        // In Image/Edit Mode: Hide Video specific fields
+                        if (cat.id === 'cameraMovement' || cat.id === 'motionStrength') return null;
+                    }
+
                     const filteredOptions = cat.options.filter(
                       opt => !opt.gender || opt.gender === state.gender
                     );
@@ -909,7 +1019,11 @@ const App: React.FC = () => {
         <div className="hidden lg:block lg:col-span-5 space-y-6 lg:sticky lg:top-8 h-fit">
           
           {/* Prompt Output Box */}
-          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border ${state.taskMode === 'editing' ? 'border-emerald-500/30' : 'border-slate-700'} shadow-2xl overflow-hidden flex flex-col`}>
+          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border ${
+              state.taskMode === 'editing' ? 'border-emerald-500/30' : 
+              state.taskMode === 'video_generation' ? 'border-rose-500/30' :
+              'border-slate-700'
+            } shadow-2xl overflow-hidden flex flex-col`}>
             <OutputToolbar />
             
             <div className="p-4 min-h-[300px] relative group bg-slate-900/50">
@@ -935,8 +1049,10 @@ const App: React.FC = () => {
                 className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all
                   ${copied 
                     ? 'bg-emerald-600 text-white' 
-                    : 'bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-900/30'}
-                `}
+                    : state.taskMode === 'video_generation'
+                      ? 'bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-50'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50'
+                   } shadow-lg`}
               >
                 <CopyIcon /> {copied ? '已複製！' : '一鍵複製'}
               </button>
@@ -947,6 +1063,8 @@ const App: React.FC = () => {
           <div className="text-xs text-slate-500 text-center px-4">
              {state.taskMode === 'editing' 
                 ? '* 修圖提示詞：適用於 Gemini, Stable Diffusion Inpainting。' 
+                : state.taskMode === 'video_generation'
+                ? '* 影片提示詞：適用於 Veo, Sora, Kling, Runway Gen-3。'
                 : '* 產圖提示詞：適用於 Nano Banana Pro, Midjourney, SD。'
              }
           </div>
