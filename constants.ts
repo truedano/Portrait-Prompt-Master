@@ -22,12 +22,14 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'nationality',
     label: '國籍/人種 (Nationality)',
     description: '人物的國籍或種族特徵',
+    multiSelect: true,
     options: NATIONALITIES
   },
   {
     id: 'age',
     label: '年齡 (Age)',
     description: '人物的年齡層',
+    multiSelect: true,
     options: [
       { label: '嬰兒 (Baby)', value: 'baby' },
       { label: '兒童 (Child)', value: 'child' },
@@ -61,6 +63,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'role',
     label: '角色/職業 (Role)',
     description: '人物的身份或職業',
+    multiSelect: true,
     options: [
       { label: '大學生', value: 'university student' },
       { label: '上班族', value: 'office worker' },
@@ -80,6 +83,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'faceShape',
     label: '臉型 (Face Shape)',
     description: '臉部輪廓特徵',
+    multiSelect: true,
     options: [
       { label: '鵝蛋臉', value: 'oval face' },
       { label: '圓臉', value: 'round face' },
@@ -94,6 +98,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'eyeGaze',
     label: '視線與眼神 (Gaze)',
     description: '眼睛的方向與互動',
+    multiSelect: true,
     options: [
       { label: '直視鏡頭', value: 'looking at viewer' },
       { label: '看向遠方', value: 'looking away, looking at horizon' },
@@ -246,6 +251,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'action',
     label: '動作 (Pose)',
     description: '人物的肢體動態',
+    multiSelect: true,
     options: [
       { label: '站姿', value: 'standing pose' },
       { label: '坐姿', value: 'sitting' },
@@ -268,6 +274,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'hands',
     label: '手部互動 (Hands)',
     description: '手部持有物品或互動',
+    multiSelect: true,
     options: [
       { label: '拿著咖啡', value: 'holding a coffee cup' },
       { label: '拿著書', value: 'holding a book' },
@@ -285,6 +292,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'composition',
     label: '構圖與視角 (Composition)',
     description: '鏡頭語言與取景方式',
+    multiSelect: true,
     options: [
       { label: '特寫 (頭像)', value: 'close-up portrait' },
       { label: '半身像', value: 'medium shot, upper body' },
@@ -305,6 +313,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'cameraMovement',
     label: '運鏡方式 (Camera Move)',
     description: '影片專用：鏡頭移動方式',
+    multiSelect: true,
     options: [
       { label: '推進 (Dolly In)', value: 'camera dolly in' },
       { label: '拉遠 (Dolly Out)', value: 'camera dolly out' },
@@ -326,6 +335,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'motionStrength',
     label: '動態強度 (Motion Strength)',
     description: '影片專用：動作幅度',
+    multiSelect: true,
     options: [
       { label: '微動 (Subtle)', value: 'subtle motion' },
       { label: '正常 (Normal)', value: 'normal motion' },
@@ -340,6 +350,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'environment',
     label: '背景環境 (Environment)',
     description: '人像所處的場景',
+    multiSelect: true,
     options: [
       { label: '純色背景 (棚拍)', value: 'simple solid background' },
       { label: '都市街道 (夜)', value: 'city street at night' },
@@ -433,6 +444,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'camera',
     label: '攝影器材 (Camera)',
     description: '鏡頭語言',
+    multiSelect: true,
     options: [
       { label: '大光圈 (背景虛化)', value: 'f/1.8, bokeh' },
       { label: '人像鏡 (85mm)', value: '85mm lens' },
@@ -464,6 +476,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     id: 'aspectRatio',
     label: '解析度/比例 (Resolution)',
     description: '圖片長寬比',
+    multiSelect: true,
     options: [
       { label: '1:1 (正方形)', value: 'aspect ratio 1:1' },
       { label: '16:9 (電影感)', value: 'aspect ratio 16:9' },
@@ -486,32 +499,32 @@ export const QUALITY_TAGS: PromptOption[] = [
 ];
 
 export const PRESERVATION_OPTIONS: PromptOption[] = [
-    { label: '臉部特徵 (Face)', value: 'facial features' },
-    { label: '髮型 (Hair)', value: 'hair style' },
-    { label: '服裝 (Clothing)', value: 'clothing' },
-    { label: '背景 (Background)', value: 'background environment' },
-    { label: '構圖 (Composition)', value: 'image composition' },
-    { label: '色調 (Colors)', value: 'color palette' },
-    { label: '光影 (Lighting)', value: 'lighting conditions' }
+  { label: '臉部特徵 (Face)', value: 'facial features' },
+  { label: '髮型 (Hair)', value: 'hair style' },
+  { label: '服裝 (Clothing)', value: 'clothing' },
+  { label: '背景 (Background)', value: 'background environment' },
+  { label: '構圖 (Composition)', value: 'image composition' },
+  { label: '色調 (Colors)', value: 'color palette' },
+  { label: '光影 (Lighting)', value: 'lighting conditions' }
 ];
 
 export const COMMON_NEGATIVE_PROMPTS = [
-  'nsfw', 
-  'low quality', 
-  'worst quality', 
-  'monochrome', 
-  'lowres', 
-  'bad anatomy', 
-  'bad hands', 
-  'text', 
-  'error', 
-  'missing fingers', 
-  'extra digit', 
-  'fewer digits', 
-  'cropped', 
-  'jpeg artifacts', 
-  'signature', 
-  'watermark', 
-  'username', 
+  'nsfw',
+  'low quality',
+  'worst quality',
+  'monochrome',
+  'lowres',
+  'bad anatomy',
+  'bad hands',
+  'text',
+  'error',
+  'missing fingers',
+  'extra digit',
+  'fewer digits',
+  'cropped',
+  'jpeg artifacts',
+  'signature',
+  'watermark',
+  'username',
   'artist name'
 ];

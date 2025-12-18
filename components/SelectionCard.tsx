@@ -121,20 +121,31 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
           })}
 
           {/* 2. Render Selected Custom Tags (that are not in options) */}
-          {Array.isArray(selectedValue) && selectedValue.map(val => {
-            // Check if this value is already rendered as an option
-            if (category.options.some(opt => opt.value === val)) return null;
-
-            return (
+          {Array.isArray(selectedValue) ? (
+            selectedValue.map(val => {
+              if (category.options.some(opt => opt.value === val)) return null;
+              return (
+                <button
+                  key={val}
+                  onClick={() => onSelect(category.id as string, val, true)}
+                  className="px-3 py-1.5 text-sm rounded-lg border border-indigo-500 bg-indigo-600 text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                >
+                  {val}
+                </button>
+              );
+            })
+          ) : (
+            // Single select custom value
+            selectedValue && !category.options.some(opt => opt.value === selectedValue) && (
               <button
-                key={val}
-                onClick={() => onSelect(category.id as string, val, true)}
+                key={selectedValue}
+                onClick={() => onSelect(category.id as string, selectedValue, true)}
                 className="px-3 py-1.5 text-sm rounded-lg border border-indigo-500 bg-indigo-600 text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]"
               >
-                {val}
+                {selectedValue}
               </button>
-            );
-          })}
+            )
+          )}
 
           {/* Empty State */}
           {(!category.options.length && (!Array.isArray(selectedValue) || selectedValue.length === 0)) && (
