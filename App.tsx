@@ -5,6 +5,7 @@ import { PortraitState, Gender, OutputLanguage, OutputFormat, ReferenceImage, Ta
 import { SelectionCard } from './components/SelectionCard';
 import { ReferenceImageCard } from './components/ReferenceImageCard';
 import { Accordion } from './components/Accordion';
+import { ProfileManager } from './components/ProfileManager';
 
 const App: React.FC = () => {
   // --- State ---
@@ -47,6 +48,7 @@ const App: React.FC = () => {
   const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
 
   // --- Helpers ---
 
@@ -794,14 +796,31 @@ const App: React.FC = () => {
               為 Nano Banana Pro (Gemini) 打造專業產圖與修圖指令。
             </p>
           </div>
-          <button
-            onClick={handleRandomizeAll}
-            className="group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-900/40 transition-all transform hover:scale-[1.02] active:scale-95 font-semibold w-full md:w-auto"
-          >
-            <DiceIcon /> 全域隨機生成
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs ml-1 bg-white/20 px-1.5 py-0.5 rounded hidden sm:inline">I'm Feeling Lucky</span>
-          </button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              onClick={() => setIsProfileManagerOpen(true)}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl transition-all font-semibold"
+            >
+              💾 設定檔 (Saves)
+            </button>
+            <button
+              onClick={handleRandomizeAll}
+              className="group flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-900/40 transition-all transform hover:scale-[1.02] active:scale-95 font-semibold"
+            >
+              <DiceIcon /> 全域隨機生成
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-xs ml-1 bg-white/20 px-1.5 py-0.5 rounded hidden sm:inline">I'm Feeling Lucky</span>
+            </button>
+          </div>
         </div>
+
+        {/* Profile Manager Modal */}
+        {isProfileManagerOpen && (
+          <ProfileManager
+            currentState={state}
+            onLoad={(newState) => setState(prev => ({ ...newState, taskMode: prev.taskMode }))} // Keep current mode or load? Usually load implies full state. But let's keep taskMode? User might want to load a "Video" preset into "Image" mode. Let's trust the loaded state but maybe preserve something? No, full load is safer. Let's just load it. Actually, overrides might be annoying if mode switches unexpectedly. Let's just load everything for now, user can switch mode back.
+            onClose={() => setIsProfileManagerOpen(false)}
+          />
+        )}
 
         {/* Left Column: Controls */}
         <div className="lg:col-span-7 space-y-6">
@@ -967,8 +986,8 @@ const App: React.FC = () => {
                 key={tag}
                 onClick={() => toggleNegativeTag(tag)}
                 className={`px-2 py-0.5 text-[10px] rounded border transition-colors ${(state.negativePrompt || '').split(',').map(t => t.trim()).includes(tag)
-                    ? 'bg-red-500/20 border-red-500 text-red-300'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                  ? 'bg-red-500/20 border-red-500 text-red-300'
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                   }`}
               >
                 {tag}
