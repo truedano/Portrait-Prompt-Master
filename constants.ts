@@ -390,16 +390,16 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     description: '決定氛圍的關鍵 (可多選混搭)',
     multiSelect: true,
     options: [
-      { label: '自然光', value: 'natural lighting' },
-      { label: '窗光', value: 'window light' },
-      { label: '黃金時刻 (夕陽)', value: 'golden hour' },
-      { label: '電影感光效', value: 'cinematic lighting' },
-      { label: '雷姆布蘭特光', value: 'Rembrandt lighting' },
-      { label: '霓虹燈光', value: 'neon lighting' },
-      { label: '柔光箱', value: 'softbox lighting' },
-      { label: '輪廓光 (背光)', value: 'rim lighting' },
-      { label: '強烈對比', value: 'high contrast' },
-      { label: '體積光 (丁達爾)', value: 'volumetric lighting' }
+      { label: '自然光', value: 'natural lighting', image: 'https://placehold.co/600x400/22c55e/ffffff?text=Natural+Light' },
+      { label: '窗光', value: 'window light', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Window+Light' },
+      { label: '黃金時刻 (夕陽)', value: 'golden hour', image: 'https://placehold.co/600x400/f59e0b/ffffff?text=Golden+Hour' },
+      { label: '電影感光效', value: 'cinematic lighting', image: 'https://placehold.co/600x400/6366f1/ffffff?text=Cinematic' },
+      { label: '雷姆布蘭特光', value: 'Rembrandt lighting', image: 'https://placehold.co/600x400/7c3aed/ffffff?text=Rembrandt' },
+      { label: '霓虹燈光', value: 'neon lighting', image: 'https://placehold.co/600x400/ec4899/ffffff?text=Neon' },
+      { label: '柔光箱', value: 'softbox lighting', image: 'https://placehold.co/600x400/94a3b8/ffffff?text=Softbox' },
+      { label: '輪廓光 (背光)', value: 'rim lighting', image: 'https://placehold.co/600x400/0f172a/ffffff?text=Rim+Light' },
+      { label: '強烈對比', value: 'high contrast', image: 'https://placehold.co/600x400/000000/ffffff?text=High+Contrast' },
+      { label: '體積光 (丁達爾)', value: 'volumetric lighting', image: 'https://placehold.co/600x400/e2e8f0/000000?text=Volumetric' }
     ]
   },
   {

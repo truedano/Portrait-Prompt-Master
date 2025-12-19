@@ -15,12 +15,12 @@ export interface ReferenceImage {
 export interface PortraitState {
   taskMode: TaskMode;
   gender: Gender;
-  referenceImages: ReferenceImage[]; 
+  referenceImages: ReferenceImage[];
   nationality: string;
   age: string;
-  
+
   // Multi-selectable fields changed to string[]
-  bodyType: string[]; 
+  bodyType: string[];
   role: string;
   faceShape: string;
   eyeGaze: string;
@@ -30,24 +30,24 @@ export interface PortraitState {
   clothing: string[];
   clothingDetail: string[];
   accessories: string[];
-  
+
   action: string;
   hands: string;
   composition: string;
   era: string;
   environment: string;
-  
+
   // Multi-selectable fields
   lighting: string[];
   colorPalette: string;
   camera: string;
   artStyle: string[];
   mood: string[];
-  
+
   aspectRatio: string;
   cameraMovement: string;
   motionStrength: string;
-  
+
   quality: string[];
   preservation: string[];
   negativePrompt: string;
@@ -60,7 +60,8 @@ export type OutputFormat = 'text' | 'json' | 'yaml' | 'markdown';
 export interface PromptOption {
   label: string;
   value: string;
-  gender?: Gender; 
+  gender?: Gender;
+  image?: string; // URL for visual selector
 }
 
 export interface OptionCategory {
