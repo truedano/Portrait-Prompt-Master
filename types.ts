@@ -51,6 +51,7 @@ export interface PortraitState {
   quality: string[];
   preservation: string[];
   negativePrompt: string;
+  useNegativePrompt: boolean;
 }
 
 export type OutputLanguage = 'en' | 'zh';

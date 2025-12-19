@@ -40,7 +40,8 @@ const App: React.FC = () => {
     motionStrength: '',
     quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
     preservation: [],
-    negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur'
+    negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur',
+    useNegativePrompt: true
   });
 
   const [outputLang, setOutputLang] = useState<OutputLanguage>('en');
@@ -128,7 +129,7 @@ const App: React.FC = () => {
       aspectRatio: resolveField('aspectRatio', state.aspectRatio, outputLang),
       cameraMovement: resolveField('cameraMovement', state.cameraMovement, outputLang),
       motionStrength: resolveField('motionStrength', state.motionStrength, outputLang),
-      negative: state.negativePrompt
+      negative: state.useNegativePrompt ? state.negativePrompt : ''
     };
 
     let result = '';
@@ -550,6 +551,10 @@ const App: React.FC = () => {
     setState(prev => ({ ...prev, negativePrompt: e.target.value }));
   };
 
+  const toggleUseNegativePrompt = () => {
+    setState(prev => ({ ...prev, useNegativePrompt: !prev.useNegativePrompt }));
+  };
+
   const toggleNegativeTag = (tag: string) => {
     setState(prev => {
       const currentRaw = prev.negativePrompt || '';
@@ -605,6 +610,7 @@ const App: React.FC = () => {
       quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
       preservation: [],
       negativePrompt: '',
+      useNegativePrompt: true,
       referenceImages: []
     }));
     setGeneratedPrompt('');
@@ -972,9 +978,23 @@ const App: React.FC = () => {
 
           {/* Negative Prompt */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 border-l-4 border-l-red-500/50">
-            <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-3 flex items-center justify-between">
-              負面提示詞 (Negative Prompts)
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm uppercase tracking-wider text-slate-500 font-semibold flex items-center gap-2">
+                負面提示詞 (Negative Prompts)
+              </h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="useNegativePrompt"
+                  checked={state.useNegativePrompt}
+                  onChange={toggleUseNegativePrompt}
+                  className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-red-500 focus:ring-red-500/50 focus:ring-offset-0 cursor-pointer"
+                />
+                <label htmlFor="useNegativePrompt" className="text-xs text-slate-400 cursor-pointer select-none">
+                  啟用 (Enable)
+                </label>
+              </div>
+            </div>
             <textarea
               value={state.negativePrompt}
               onChange={handleNegativeChange}
