@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS } from './constants';
 import { PortraitState, OutputLanguage, OutputFormat, ReferenceImage, TaskMode } from './types';
 import { SelectionCard } from './components/SelectionCard';
 import { ReferenceImageCard } from './components/ReferenceImageCard';
 import { Accordion } from './components/Accordion';
-import { ProfileManager } from './components/ProfileManager';
+import { HistoryPanel } from './components/HistoryPanel';
 import { usePortraitState } from './hooks/usePortraitState';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
+import { useHistory } from './hooks/useHistory';
 
 const App: React.FC = () => {
   // --- Custom Hooks ---
   const {
     state,
-    setState, // Exposed if needed for advanced cases, but handlers should suffice
+    setState,
     handleSelect,
     handleGenderSelect,
     handleTaskModeSelect,
@@ -28,35 +29,86 @@ const App: React.FC = () => {
     removeReferenceImage
   } = usePortraitState();
 
+  const {
+    history,
+    favorites,
+    addToHistory,
+    toggleFavorite,
+    removeFavorite, // exposed but used via toggleFavorite mainly
+    clearHistory
+  } = useHistory();
+
   // --- UI State (Layout/View only) ---
   const [outputLang, setOutputLang] = useState<OutputLanguage>('en');
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('text');
   const [copied, setCopied] = useState(false);
   const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
-  const [isProfileManagerOpen, setIsProfileManagerOpen] = useState(false);
+
+  // New UI states for sliding panels
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // --- Prompt Generation ---
   const generatedPrompt = usePromptGenerator(state, outputLang, outputFormat);
 
-  // --- Handlers (UI specific) ---
-
-  const handleCopy = () => {
+  // --- Effects ---
+  const handleCopy = async () => {
     if (!generatedPrompt) return;
-    navigator.clipboard.writeText(generatedPrompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    const onSuccess = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      addToHistory(state);
+    };
+
+    try {
+      // Try modern Clipboard API first
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(generatedPrompt);
+        onSuccess();
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch (err) {
+      console.warn('Clipboard API failed, attempting fallback...', err);
+      // Fallback for older browsers or non-secure contexts
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = generatedPrompt;
+
+        // Ensure it's not visible but part of DOM
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (successful) {
+          onSuccess();
+        } else {
+          console.error("Fallback copy failed.");
+          alert("複製失敗，請手動選取文字複製。");
+        }
+      } catch (fallbackErr) {
+        console.error("Fallback copy error:", fallbackErr);
+        alert("複製失敗，請手動選取文字複製。");
+      }
+    }
   };
 
-  const handleProfileSelect = (profile: PortraitState) => {
-    // When loading a profile, we need to overwrite the current state
-    // Since usePortraitState exposes setState, we can use it here.
-    setState((prev: PortraitState) => ({
-      ...prev,
-      ...profile,
-      // Preserve reference images if needed? Usually profiles don't contain them or we overwrite.
-      // Assuming profile is a PortraitState, we overwrite.
-    }));
-    setIsProfileManagerOpen(false);
+  const handleLoadState = (loadedState: PortraitState) => {
+    setState(loadedState);
+    // Optional: close panel on mobile, keep open on desktop?
+    // setIsHistoryOpen(false); 
+  };
+
+  const handleSmartRandomize = (theme?: string) => {
+    handleRandomizeAll(theme);
+    // We don't auto-add to history here, let user explore first.
   };
 
   // --- Icons ---
@@ -102,6 +154,10 @@ const App: React.FC = () => {
 
   const VideoIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" ry="2" /></svg>
+  );
+
+  const HistoryIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>
   );
 
   // Group Icons
@@ -208,7 +264,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 pb-24 lg:pb-8 p-4 md:p-8 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
 
         {/* Header */}
         <div className="lg:col-span-12 mb-4 lg:mb-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -216,33 +272,51 @@ const App: React.FC = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
               人像提示詞大師
             </h1>
-            <p className="text-slate-400 text-sm mt-1">Portrait Prompt Master v2.0</p>
+            <p className="text-slate-400 text-sm mt-1">Portrait Prompt Master v2.1</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setIsProfileManagerOpen(!isProfileManagerOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors text-sm font-medium border border-slate-700"
+              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+              className={`flex items-center gap-2 px-4 py-2 text-slate-200 rounded-lg transition-colors text-sm font-medium border ${isHistoryOpen ? 'bg-slate-700 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}`}
             >
-              <UserIcon />
-              設定檔管理
+              <HistoryIcon />
+              {isHistoryOpen ? '隱藏紀錄' : '歷史紀錄'}
             </button>
-            <button
-              onClick={handleRandomizeAll}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-indigo-500/20 transition-all text-sm font-medium"
-            >
-              <DiceIcon />
-              一鍵隨機生成
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleSmartRandomize()}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-l-lg hover:shadow-lg hover:shadow-indigo-500/20 transition-all text-sm font-medium border-r border-white/20"
+              >
+                <DiceIcon />
+                隨機生成
+              </button>
+              <div className="relative group/random">
+                <button className="h-full px-2 bg-purple-600 rounded-r-lg hover:bg-purple-500 text-white flex items-center">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                {/* Random Dropdown */}
+                <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden hidden group-hover/random:block z-50">
+                  <div className="p-2 text-xs text-slate-500 font-semibold uppercase">智慧隨機主題</div>
+                  <button onClick={() => handleSmartRandomize('cyberpunk')} className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm text-cyan-300">賽博龐克 (Cyberpunk)</button>
+                  <button onClick={() => handleSmartRandomize('fantasy')} className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm text-emerald-300">奇幻冒險 (Fantasy)</button>
+                  <button onClick={() => handleSmartRandomize('vintage')} className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm text-amber-300">復古底片 (Vintage)</button>
+                  <button onClick={() => handleSmartRandomize('portrait')} className="w-full text-left px-4 py-2 hover:bg-slate-700 text-sm text-pink-300">專業人像 (Portrait)</button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* Profile Manager Panel */}
-        {isProfileManagerOpen && (
-          <div className="lg:col-span-12 mb-4">
-            <ProfileManager
-              currentState={state}
-              onSelectProfile={handleProfileSelect}
-              onClose={() => setIsProfileManagerOpen(false)}
+        {/* History Panel (Collapsible) */}
+        {isHistoryOpen && (
+          <div className="lg:col-span-12 animate-fade-in">
+            <HistoryPanel
+              history={history}
+              favorites={favorites}
+              onLoad={handleLoadState}
+              onToggleFavorite={toggleFavorite}
+              onClearHistory={clearHistory}
             />
           </div>
         )}
@@ -449,8 +523,8 @@ const App: React.FC = () => {
                       key={tag.value}
                       onClick={() => toggleQualityTag(tag.value)}
                       className={`px-2 py-1 text-xs rounded-full border transition-all ${state.quality.includes(tag.value)
-                          ? 'bg-yellow-500/20 border-yellow-500 text-yellow-300'
-                          : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
+                        ? 'bg-yellow-500/20 border-yellow-500 text-yellow-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
                         }`}
                     >
                       {tag.label}
@@ -473,8 +547,8 @@ const App: React.FC = () => {
                       key={opt.value}
                       onClick={() => togglePreservationTag(opt.value)}
                       className={`px-2 py-1 text-xs rounded-full border transition-all ${state.preservation.includes(opt.value)
-                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                          : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
+                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
                         }`}
                     >
                       {opt.label}

@@ -119,14 +119,38 @@ export const usePortraitState = () => {
         });
     };
 
-    const handleRandomizeAll = () => {
+    const handleRandomizeAll = (theme?: string) => {
         const newValues: Partial<PortraitState> = {};
+
+        // Define theme filters (keywords to look for in option values)
+        const themeKeywords: Record<string, string[]> = {
+            'cyberpunk': ['cyberpunk', 'neon', 'mechanical', 'tech', 'futuristic', 'blue', 'purple', 'night', 'city', 'leather'],
+            'fantasy': ['wizard', 'elf', 'magic', 'wood', 'forest', 'robe', 'medieval', 'castle', 'armor', 'sword'],
+            'vintage': ['1920s', '1980s', 'retro', 'film', 'grain', 'sepia', 'faded', 'old'],
+            'portrait': ['portrait', 'studio', 'lighting', 'bokeh', '85mm', 'sharp', 'clean']
+        };
+
+        const keywords = theme ? themeKeywords[theme] : [];
+
         PROMPT_CATEGORIES.forEach(cat => {
             // Logic for hiding fields should also apply to randomization to avoid setting hidden values
             if (state.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
             if (state.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
 
-            const validOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
+            // Filter options by gender
+            let validOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
+
+            // If a theme is selected, filter options further by keywords
+            if (theme && keywords.length > 0) {
+                const themedOptions = validOptions.filter(opt =>
+                    keywords.some(k => opt.value.toLowerCase().includes(k))
+                );
+                // If theme matches found, prefer them. Otherwise fallback to all valid options.
+                if (themedOptions.length > 0) {
+                    validOptions = themedOptions;
+                }
+            }
+
             if (validOptions.length > 0) {
                 const randomVal = validOptions[Math.floor(Math.random() * validOptions.length)].value;
                 if (cat.multiSelect) {
