@@ -65,11 +65,19 @@ export const usePortraitState = () => {
     };
 
     const handleGenderSelect = (gender: Gender) => {
-        setState(prev => ({ ...prev, gender }));
+        setState(prev => ({
+            ...prev,
+            gender: prev.gender === gender ? undefined : gender
+        }));
     };
 
     const handleTaskModeSelect = (mode: TaskMode) => {
-        setState(prev => ({ ...prev, taskMode: mode }));
+        setState(prev => ({
+            ...prev,
+            taskMode: mode,
+            // If switching to editing mode, default gender to undefined (unselected)
+            gender: mode === 'editing' ? undefined : prev.gender
+        }));
     };
 
     const toggleQualityTag = (tagValue: string) => {
@@ -137,8 +145,8 @@ export const usePortraitState = () => {
             if (state.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
             if (state.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
 
-            // Filter options by gender
-            let validOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
+            // Filter options by gender (if no gender selected, allow all)
+            let validOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
 
             // If a theme is selected, filter options further by keywords
             if (theme && keywords.length > 0) {

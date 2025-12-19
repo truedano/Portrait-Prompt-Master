@@ -1,5 +1,5 @@
 
-export type Gender = 'female' | 'male';
+export type Gender = 'female' | 'male' | undefined;
 
 export type TaskMode = 'generation' | 'editing' | 'video_generation';
 

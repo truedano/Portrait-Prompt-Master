@@ -49,8 +49,8 @@ export const usePromptGenerator = (
     // --- Logic ---
     useEffect(() => {
         // 1. Resolve raw values to localized strings
-        const genderTermEn = state.gender === 'female' ? 'woman' : 'man';
-        const genderTermZh = state.gender === 'female' ? '女性' : '男性';
+        const genderTermEn = state.gender === 'female' ? 'woman' : (state.gender === 'male' ? 'man' : '');
+        const genderTermZh = state.gender === 'female' ? '女性' : (state.gender === 'male' ? '男性' : '');
 
         // Raw fields for logic
         const raw = state;
@@ -174,8 +174,8 @@ export const usePromptGenerator = (
         else {
             // A. VIDEO GENERATION MODE
             if (state.taskMode === 'video_generation') {
-                const subjectEn = [state.nationality, state.age, state.gender === 'female' ? 'woman' : 'man', state.role].filter(Boolean).join(' ');
-                const subjectZh = [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join('');
+                const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
+                const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
                 const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
 
                 // Video Structure: [Camera Move] + [Subject] + [Action/Motion] + [Environment] + [Style/Quality]
@@ -215,8 +215,8 @@ export const usePromptGenerator = (
             }
             // B. IMAGE GENERATION MODE (Descriptive)
             else if (state.taskMode === 'generation') {
-                const subjectEn = [state.nationality, state.age, state.gender === 'female' ? 'woman' : 'man', state.role].filter(Boolean).join(' ');
-                const subjectZh = [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join('');
+                const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
+                const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
                 const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
 
                 // ORDER OPTIMIZATION FOR GEMINI / NANO BANANA PRO

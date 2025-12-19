@@ -470,7 +470,7 @@ const App: React.FC = () => {
                     if (!cat) return null;
 
                     // Filter options by gender
-                    const filteredOptions = cat.options.filter(opt => !opt.gender || opt.gender === state.gender);
+                    const filteredOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
 
                     return (
                       <SelectionCard
