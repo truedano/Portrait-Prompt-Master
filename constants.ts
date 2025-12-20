@@ -72,33 +72,37 @@ export const VEHICLE_COLOR: PromptOption[] = [
   { label: '生鏽 (Rusted)', value: 'rusted metal texture' },
 ];
 
-export const PROMPT_CATEGORIES: OptionCategory[] = [
+export const PROMPT_CATEGORIES: (OptionCategory & { scope: 'global' | 'subject' })[] = [
   // --- ANIMAL SPECIFIC ---
   {
     id: 'animalSpecies',
     label: '物種 (Species)',
     description: '動物種類',
-    options: ANIMAL_SPECIES
+    options: ANIMAL_SPECIES,
+    scope: 'subject'
   },
   {
     id: 'animalFur',
     label: '毛色/特徵 (Fur)',
     description: '動物的毛色與質感',
     multiSelect: true,
-    options: ANIMAL_FUR
+    options: ANIMAL_FUR,
+    scope: 'subject'
   },
   // --- VEHICLE SPECIFIC ---
   {
     id: 'vehicleType',
     label: '車型 (Vehicle Type)',
     description: '交通工具種類',
-    options: VEHICLE_TYPES
+    options: VEHICLE_TYPES,
+    scope: 'subject'
   },
   {
     id: 'vehicleColor',
     label: '烤漆顏色 (Paint)',
     description: '車輛外觀顏色',
-    options: VEHICLE_COLOR
+    options: VEHICLE_COLOR,
+    scope: 'subject'
   },
   // --- HUMAN DEFAULT ---
   {
@@ -106,7 +110,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
     label: '國籍/人種 (Nationality)',
     description: '人物的國籍或種族特徵',
     multiSelect: true,
-    options: NATIONALITIES
+    options: NATIONALITIES,
+    scope: 'subject'
   },
   {
     id: 'age',
@@ -121,7 +126,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '30歲 (30s)', value: '30 years old' },
       { label: '中年 (Middle-aged)', value: 'middle-aged' },
       { label: '老年 (Elderly)', value: 'elderly' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'bodyType',
@@ -140,7 +146,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '寬肩 (Broad shoulders)', value: 'broad shoulders', gender: 'male' },
       { label: '嬌小 (Petite)', value: 'petite frame', gender: 'female' },
       { label: '高大 (Tall)', value: 'tall stature' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'role',
@@ -160,7 +167,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '精靈', value: 'elf' },
       { label: '探險家', value: 'explorer' },
       { label: '街頭龐克', value: 'street punk' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'faceShape',
@@ -175,7 +183,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '稜角分明', value: 'chiseled jawline' },
       { label: '瘦削臉頰', value: 'gaunt cheeks' },
       { label: '嬰兒肥', value: 'chubby cheeks' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'eyeGaze',
@@ -191,7 +200,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '向下看', value: 'looking down' },
       { label: '向上看', value: 'looking up' },
       { label: '斜視', value: 'sideways glance' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'hairColor',
@@ -210,7 +220,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '彩虹色', value: 'rainbow hair' },
       { label: '漸層染 (Ombre)', value: 'ombre hair' },
       { label: '挑染 (Streaks)', value: 'highlighted hair' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'hairStyle',
@@ -232,7 +243,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '爆炸頭 (Afro)', value: 'afro hair' },
       { label: '辮子 (Braids)', value: 'braided hair' },
       { label: '丸子頭 (Bun)', value: 'hair bun' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'appearance',
@@ -262,7 +274,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '山羊鬍', value: 'goatee', gender: 'male' },
       { label: '鬍渣', value: 'stubble', gender: 'male' },
       { label: '銳利眼神', value: 'sharp eyes', gender: 'male' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'clothing',
@@ -288,7 +301,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '戰術背心', value: 'tactical vest' },
       { label: '科幻機甲', value: 'sci-fi mechanical armor' },
       { label: '運動服', value: 'sportswear' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'clothingDetail',
@@ -309,7 +323,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '薄紗/透視', value: 'sheer fabric' },
       { label: '金屬光澤', value: 'metallic fabric' },
       { label: '破舊', value: 'worn and torn clothes' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'accessories',
@@ -328,7 +343,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '戰術面罩', value: 'wearing tactical mask' },
       { label: '皇冠', value: 'wearing crown' },
       { label: '眼罩', value: 'wearing eyepatch' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'action',
@@ -351,7 +367,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '戰鬥姿態', value: 'fighting stance' },
       { label: '祈禱', value: 'praying pose' },
       { label: '手插口袋', value: 'hands in pockets' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'hands',
@@ -369,7 +386,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '比讚', value: 'thumbs up' },
       { label: '比愛心', value: 'making heart shape with hands' },
       { label: '拿著相機', value: 'holding a camera' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'composition',
@@ -389,7 +407,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '景深 (背景模糊)', value: 'depth of field, blurred background' },
       { label: '魚眼', value: 'fisheye lens effect' },
       { label: 'GoPro', value: 'wide-angle action camera footage style' }
-    ]
+    ],
+    scope: 'global'
   },
   // New: Camera Movement for Video
   {
@@ -411,7 +430,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: 'FPV 穿越', value: 'FPV drone view' },
       { label: '手持晃動', value: 'handheld camera movement' },
       { label: '固定鏡頭', value: 'static camera' }
-    ]
+    ],
+    scope: 'global'
   },
   // New: Motion Strength for Video
   {
@@ -427,7 +447,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '慢動作 (Slow Mo)', value: 'slow motion' },
       { label: '縮時 (Timelapse)', value: 'timelapse' },
       { label: '極速 (Hyperlapse)', value: 'hyperlapse' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'environment',
@@ -449,7 +470,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '臥室', value: 'bedroom' },
       { label: '圖書館', value: 'library' },
       { label: '屋頂', value: 'rooftop' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'era',
@@ -465,7 +487,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '賽博龐克 (2077)', value: 'Cyberpunk 2077 era, futuristic' },
       { label: '江戶時代 (日本)', value: 'Edo period Japan' },
       { label: '民國風', value: 'Republican China era' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'lighting',
@@ -483,7 +506,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '輪廓光 (背光)', value: 'rim lighting', image: 'https://placehold.co/600x400/0f172a/ffffff?text=Rim+Light' },
       { label: '強烈對比', value: 'high contrast', image: 'https://placehold.co/600x400/000000/ffffff?text=High+Contrast' },
       { label: '體積光 (丁達爾)', value: 'volumetric lighting', image: 'https://placehold.co/600x400/e2e8f0/000000?text=Volumetric' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'colorPalette',
@@ -502,7 +526,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '拍立得質感', value: 'Polaroid style' },
       { label: '懷舊泛黃 (Sepia)', value: 'sepia tone' },
       { label: '低飽和度', value: 'desaturated colors' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'artStyle',
@@ -521,7 +546,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '底片感 (Film)', value: 'Analog film, grain, vintage' },
       { label: '概念藝術', value: 'concept art' },
       { label: '浮世繪', value: 'Ukiyo-e style' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'camera',
@@ -535,7 +561,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '長焦鏡', value: 'telephoto lens' },
       { label: '微距', value: 'macro lens' },
       { label: '無人機視角', value: 'drone shot' }
-    ]
+    ],
+    scope: 'global'
   },
   {
     id: 'mood',
@@ -553,7 +580,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '害羞', value: 'shy, blushing' },
       { label: '厭世', value: 'bored, gloomy' },
       { label: '驚訝', value: 'surprised' }
-    ]
+    ],
+    scope: 'subject'
   },
   {
     id: 'aspectRatio',
@@ -567,7 +595,8 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '4:3 (傳統照片)', value: 'aspect ratio 4:3' },
       { label: '3:4 (人像照片)', value: 'aspect ratio 3:4' },
       { label: '21:9 (超寬螢幕)', value: 'aspect ratio 21:9' }
-    ]
+    ],
+    scope: 'global'
   }
 ];
 

@@ -1,295 +1,431 @@
 import { useState } from 'react';
-import { PortraitState, Gender, ReferenceImage, TaskMode, SubjectType } from '../types';
+import { PortraitState, Gender, ReferenceImage, TaskMode, SubjectType, SubjectConfig, GlobalConfig } from '../types';
 import { PROMPT_CATEGORIES, SUBJECT_CATEGORY_CONFIG, SCENERY_FORBIDDEN_MOODS } from '../constants';
 
+const createDefaultSubject = (id: string, type: SubjectType = 'human'): SubjectConfig => ({
+    id,
+    subjectType: type,
+    gender: 'female',
+    nationality: [],
+    age: [],
+    role: [],
+    bodyType: [],
+    faceShape: [],
+    eyeGaze: [],
+    hairColor: [],
+    hairStyle: [],
+    appearance: [],
+    clothing: [],
+    clothingDetail: [],
+    accessories: [],
+    action: [],
+    hands: [],
+    mood: [],
+    animalSpecies: '',
+    animalFur: [],
+    vehicleType: '',
+    vehicleColor: ''
+});
+
+const defaultGlobal: GlobalConfig = {
+    taskMode: 'generation',
+    composition: [],
+    era: '',
+    environment: [],
+    lighting: [],
+    colorPalette: '',
+    camera: [],
+    artStyle: [],
+    aspectRatio: '',
+    cameraMovement: [],
+    motionStrength: '',
+    quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
+    preservation: [],
+    negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur',
+    useNegativePrompt: true,
+    referenceImages: []
+};
+
 export const usePortraitState = () => {
+    const defaultSubject = createDefaultSubject('subject-1');
+
     const [state, setState] = useState<PortraitState>({
-        taskMode: 'generation', // Default mode
-        subjectType: 'human',
-        gender: 'female',
-        referenceImages: [],
-        nationality: '',
-        age: '',
-        bodyType: [], // Multi
-        role: '',
-        faceShape: '',
-        eyeGaze: '',
-        hairColor: [], // Multi
-        hairStyle: [], // Multi
-        appearance: [], // Multi
-        clothing: [], // Multi
-        clothingDetail: [], // Multi
-        accessories: [], // Multi
-        action: '',
-        hands: '',
-        composition: '',
-        era: '',
-        environment: '',
-        lighting: [], // Multi
-        colorPalette: '',
-        camera: '',
-        artStyle: [], // Multi
-        mood: [], // Multi
-        aspectRatio: '',
-        cameraMovement: '',
-        motionStrength: '',
-
-        animalSpecies: '',
-        animalFur: [],
-        vehicleType: '',
-        vehicleColor: '',
-
-        quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
-        preservation: [],
-        negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur',
-        useNegativePrompt: true
+        global: defaultGlobal,
+        subjects: [defaultSubject],
+        activeSubjectId: defaultSubject.id
     });
 
+    // --- Subject Management ---
+    const addSubject = () => {
+        const newId = `subject-${Date.now()}`;
+        const newSubject = createDefaultSubject(newId);
+        setState(prev => ({
+            ...prev,
+            subjects: [...prev.subjects, newSubject],
+            activeSubjectId: newId
+        }));
+    };
+
+    const removeSubject = (id: string) => {
+        setState(prev => {
+            if (prev.subjects.length <= 1) return prev; // Don't remove the last one
+            const newSubjects = prev.subjects.filter(s => s.id !== id);
+            const newActiveId = prev.activeSubjectId === id ? newSubjects[0].id : prev.activeSubjectId;
+            return {
+                ...prev,
+                subjects: newSubjects,
+                activeSubjectId: newActiveId
+            };
+        });
+    };
+
+    const setActiveSubject = (id: string) => {
+        setState(prev => ({ ...prev, activeSubjectId: id }));
+    };
+
+    // --- Selection Logic ---
     const handleSelect = (category: string, value: string, isToggle = true) => {
         setState(prev => {
-            const currentVal = (prev as any)[category];
-            // Check if the category definition allows multiSelect
             const catConfig = PROMPT_CATEGORIES.find(c => c.id === category);
-            const isMulti = catConfig?.multiSelect;
 
-            if (isMulti && Array.isArray(currentVal)) {
-                if (!isToggle) {
-                    // Force set (replace all)
-                    return { ...prev, [category]: [value] };
+            // Scope check
+            const scope = (catConfig as any)?.scope || 'global';
+
+            if (scope === 'subject') {
+                // Update Active Subject
+                const activeIndex = prev.subjects.findIndex(s => s.id === prev.activeSubjectId);
+                if (activeIndex === -1) return prev;
+
+                const newSubjects = [...prev.subjects];
+                const activeSubject = { ...newSubjects[activeIndex] } as any;
+                const currentVal = activeSubject[category];
+
+                // Force multi-select behavior for fields typed as array in SubjectConfig
+                const isArrayType = Array.isArray(activeSubject[category]);
+
+                if (isArrayType) {
+                    let newValue: string[];
+                    if (!isToggle) {
+                        newValue = [value];
+                    } else {
+                        const exists = currentVal.includes(value);
+                        newValue = exists ? currentVal.filter((v: string) => v !== value) : [...currentVal, value];
+                    }
+                    activeSubject[category] = newValue;
+                } else {
+                    // Single value
+                    if (!isToggle) activeSubject[category] = value;
+                    else activeSubject[category] = currentVal === value ? '' : value;
                 }
+                newSubjects[activeIndex] = activeSubject;
+                return { ...prev, subjects: newSubjects };
 
-                const exists = currentVal.includes(value);
-                const newValue = exists
-                    ? currentVal.filter(v => v !== value)
-                    : [...currentVal, value];
-                return { ...prev, [category]: newValue };
             } else {
-                // Single select logic
-                if (!isToggle) return { ...prev, [category]: value };
-                return { ...prev, [category]: currentVal === value ? '' : value };
+                // Update Global
+                const newGlobal = { ...prev.global } as any;
+                const currentVal = newGlobal[category];
+                // Check if config says multi, OR if our new type says array
+                const isArrayType = Array.isArray(newGlobal[category]);
+
+                if (isArrayType) {
+                    let newValue: string[];
+                    if (!isToggle) {
+                        newValue = [value];
+                    } else {
+                        const exists = currentVal.includes(value);
+                        newValue = exists ? currentVal.filter((v: string) => v !== value) : [...currentVal, value];
+                    }
+                    newGlobal[category] = newValue;
+                } else {
+                    // Single value
+                    if (!isToggle) newGlobal[category] = value;
+                    else newGlobal[category] = currentVal === value ? '' : value;
+                }
+                return { ...prev, global: newGlobal };
             }
         });
     };
 
     const handleSubjectTypeSelect = (type: SubjectType) => {
         setState(prev => {
-            if (prev.subjectType === type) return prev; // No change
+            const activeIndex = prev.subjects.findIndex(s => s.id === prev.activeSubjectId);
+            if (activeIndex === -1) return prev;
 
-            // Smart Clear: Keep only fields valid for the new SubjectType
+            const newSubjects = [...prev.subjects];
+            const oldSubject = newSubjects[activeIndex];
+
+            if (oldSubject.subjectType === type) return prev;
+
             const allowedCategories = SUBJECT_CATEGORY_CONFIG[type] || [];
 
-            // Core fields to always keep
-            const preservedKeys = [
-                'taskMode', 'subjectType', 'gender', 'referenceImages',
-                'quality', 'preservation', 'negativePrompt', 'useNegativePrompt'
-            ];
+            const newSubject: any = { ...oldSubject, subjectType: type };
 
-            // 1. Start with copying preserved keys
-            const newState: any = {};
-            preservedKeys.forEach(key => {
-                newState[key] = (prev as any)[key];
-            });
-
-            // 2. Set new subject type
-            newState.subjectType = type;
-
-            // 3. For every category in PROMPT_CATEGORIES, check if allowed
-            PROMPT_CATEGORIES.forEach(cat => {
-                // If this category is allowed in the NEW subject type, copy old value
-                if (allowedCategories.includes(cat.id)) {
-                    newState[cat.id] = (prev as any)[cat.id];
-                } else {
-                    // Otherwise reset to default
-                    if (cat.multiSelect) {
-                        newState[cat.id] = [];
-                    } else {
-                        newState[cat.id] = '';
-                    }
+            // Reset invalid fields
+            [
+                'nationality', 'age', 'role', 'bodyType', 'faceShape', 'eyeGaze',
+                'hairColor', 'hairStyle', 'appearance', 'clothing', 'clothingDetail',
+                'accessories', 'action', 'hands', 'mood',
+                'animalSpecies', 'animalFur', 'vehicleType', 'vehicleColor'
+            ].forEach(key => {
+                if (!allowedCategories.includes(key)) {
+                    if (Array.isArray(newSubject[key])) newSubject[key] = [];
+                    else newSubject[key] = '';
                 }
             });
 
-            // Specially handle Gender: if switching to non-human, maybe we should clear gender?
-            // Current design: Human keeps gender. Animal/Vehicle ignores it visually but maybe we clear it for cleaner state.
-            // Let's clear gender if not human to avoid "Female Car" unless user wants that.
+            // Gender handling
             if (type !== 'human') {
-                newState.gender = undefined;
-                newState.quality = (prev.quality || []).filter(q => q !== 'detailed face');
-                // Also clean up forbidden moods if switching to scenery
+                newSubject.gender = undefined;
                 if (type === 'scenery') {
-                    newState.mood = (prev.mood || []).filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
-                }
-            } else {
-                // If switching back to human, auto-add 'detailed face' for best results
-                if (!newState.quality.includes('detailed face')) {
-                    newState.quality = [...newState.quality, 'detailed face'];
+                    newSubject.mood = newSubject.mood.filter((m: string) => !SCENERY_FORBIDDEN_MOODS.includes(m));
                 }
             }
 
-            return newState as PortraitState;
+            newSubjects[activeIndex] = newSubject as SubjectConfig;
+            return { ...prev, subjects: newSubjects };
         });
     };
 
     const handleGenderSelect = (gender: Gender) => {
-        setState(prev => ({
-            ...prev,
-            gender: prev.gender === gender ? undefined : gender
-        }));
+        setState(prev => {
+            const activeIndex = prev.subjects.findIndex(s => s.id === prev.activeSubjectId);
+            if (activeIndex === -1) return prev;
+            const newSubjects = [...prev.subjects];
+            newSubjects[activeIndex] = {
+                ...newSubjects[activeIndex],
+                gender: newSubjects[activeIndex].gender === gender ? undefined : gender
+            };
+            return { ...prev, subjects: newSubjects };
+        });
     };
 
     const handleTaskModeSelect = (mode: TaskMode) => {
         setState(prev => ({
             ...prev,
-            taskMode: mode,
-            // If switching to editing mode, default gender to undefined (unselected)
-            gender: mode === 'editing' ? undefined : prev.gender
+            global: {
+                ...prev.global,
+                taskMode: mode
+            }
         }));
     };
 
+
+    // Global Toggles
     const toggleQualityTag = (tagValue: string) => {
         setState(prev => {
-            const currentTags = prev.quality;
-            if (currentTags.includes(tagValue)) {
-                return { ...prev, quality: currentTags.filter(t => t !== tagValue) };
-            } else {
-                return { ...prev, quality: [...currentTags, tagValue] };
-            }
+            const current = prev.global.quality;
+            const newTags = current.includes(tagValue)
+                ? current.filter(t => t !== tagValue)
+                : [...current, tagValue];
+            return { ...prev, global: { ...prev.global, quality: newTags } };
         });
     };
 
     const togglePreservationTag = (tagValue: string) => {
         setState(prev => {
-            const current = prev.preservation || [];
-            if (current.includes(tagValue)) {
-                return { ...prev, preservation: current.filter(t => t !== tagValue) };
-            } else {
-                return { ...prev, preservation: [...current, tagValue] };
-            }
+            const current = prev.global.preservation;
+            const newTags = current.includes(tagValue)
+                ? current.filter(t => t !== tagValue)
+                : [...current, tagValue];
+            return { ...prev, global: { ...prev.global, preservation: newTags } };
         });
     };
 
     const handleNegativeChange = (value: string) => {
-        setState(prev => ({ ...prev, negativePrompt: value }));
+        setState(prev => ({ ...prev, global: { ...prev.global, negativePrompt: value } }));
     };
 
     const toggleUseNegativePrompt = () => {
-        setState(prev => ({ ...prev, useNegativePrompt: !prev.useNegativePrompt }));
+        setState(prev => ({ ...prev, global: { ...prev.global, useNegativePrompt: !prev.global.useNegativePrompt } }));
     };
 
     const toggleNegativeTag = (tag: string) => {
         setState(prev => {
-            const currentRaw = prev.negativePrompt || '';
-            // Split by comma, trim whitespace, remove empty
+            const currentRaw = prev.global.negativePrompt || '';
             const tags = currentRaw.split(',').map(t => t.trim()).filter(Boolean);
-
-            if (tags.includes(tag)) {
-                // Remove
-                const newTags = tags.filter(t => t !== tag);
-                return { ...prev, negativePrompt: newTags.join(', ') };
-            } else {
-                // Add
-                return { ...prev, negativePrompt: [...tags, tag].join(', ') };
-            }
+            let newTags;
+            if (tags.includes(tag)) newTags = tags.filter(t => t !== tag);
+            else newTags = [...tags, tag];
+            return { ...prev, global: { ...prev.global, negativePrompt: newTags.join(', ') } };
         });
     };
 
     const handleRandomizeAll = (theme?: string) => {
-        const newValues: Partial<PortraitState> = {};
-
-        // Define theme filters (keywords to look for in option values)
         const themeKeywords: Record<string, string[]> = {
             'cyberpunk': ['cyberpunk', 'neon', 'mechanical', 'tech', 'futuristic', 'blue', 'purple', 'night', 'city', 'leather'],
             'fantasy': ['wizard', 'elf', 'magic', 'wood', 'forest', 'robe', 'medieval', 'castle', 'armor', 'sword'],
             'vintage': ['1920s', '1980s', 'retro', 'film', 'grain', 'sepia', 'faded', 'old'],
             'portrait': ['portrait', 'studio', 'lighting', 'bokeh', '85mm', 'sharp', 'clean']
         };
-
         const keywords = theme ? themeKeywords[theme] : [];
 
-        PROMPT_CATEGORIES.forEach(cat => {
-            // Logic for hiding fields should also apply to randomization to avoid setting hidden values
-            if (state.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
-            if (state.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
+        setState(prev => {
+            const activeIndex = prev.subjects.findIndex(s => s.id === prev.activeSubjectId);
+            if (activeIndex === -1) return prev;
 
-            // Check if category is allowed for current subject type
-            const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
-            if (!allowedForSubject.includes(cat.id)) return;
+            const newSubjects = [...prev.subjects];
+            // Shallow clone active subject to modify
+            const newSubject = { ...newSubjects[activeIndex] } as any;
+            const newGlobal = { ...prev.global } as any;
 
-            // Filter options by gender (if no gender selected, allow all)
-            let validOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
+            PROMPT_CATEGORIES.forEach(cat => {
+                // Video/task checks
+                if (newGlobal.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
+                if (newGlobal.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
 
-            // Filter character-specific options for Scenery mode
-            if (state.subjectType === 'scenery') {
-                if (cat.id === 'mood') {
-                    validOptions = validOptions.filter(opt => !SCENERY_FORBIDDEN_MOODS.includes(opt.value));
+                const scope = (cat as any).scope || 'global';
+
+                if (scope === 'subject') {
+                    // Subject Randomization
+                    const allowedForSubject = SUBJECT_CATEGORY_CONFIG[newSubject.subjectType] || [];
+                    if (!allowedForSubject.includes(cat.id)) return;
+
+                    let validOptions = cat.options.filter(opt => !opt.gender || !newSubject.gender || opt.gender === newSubject.gender);
+
+                    if (newSubject.subjectType === 'scenery') {
+                        if (cat.id === 'mood') {
+                            validOptions = validOptions.filter(opt => !SCENERY_FORBIDDEN_MOODS.includes(opt.value));
+                        } else {
+                            const forbiddenSceneryOptions = ['close-up portrait', 'medium shot, upper body', 'full body shot', 'selfie angle', '85mm lens'];
+                            validOptions = validOptions.filter(opt => !forbiddenSceneryOptions.includes(opt.value));
+                        }
+                    }
+
+                    if (theme && keywords.length > 0) {
+                        const themed = validOptions.filter(opt => keywords.some(k => opt.value.toLowerCase().includes(k)));
+                        if (themed.length > 0) validOptions = themed;
+                    }
+
+                    if (validOptions.length > 0) {
+                        const randomVal = validOptions[Math.floor(Math.random() * validOptions.length)].value;
+                        if (Array.isArray(newSubject[cat.id])) newSubject[cat.id] = [randomVal];
+                        else newSubject[cat.id] = randomVal;
+                    }
                 } else {
-                    const forbiddenSceneryOptions = ['close-up portrait', 'medium shot, upper body', 'full body shot', 'selfie angle', '85mm lens'];
-                    validOptions = validOptions.filter(opt => !forbiddenSceneryOptions.includes(opt.value));
+                    // Global Randomization
+                    let validOptions = cat.options;
+                    if (theme && keywords.length > 0) {
+                        const themed = validOptions.filter(opt => keywords.some(k => opt.value.toLowerCase().includes(k)));
+                        if (themed.length > 0) validOptions = themed;
+                    }
+                    if (validOptions.length > 0) {
+                        const randomVal = validOptions[Math.floor(Math.random() * validOptions.length)].value;
+                        if (Array.isArray(newGlobal[cat.id])) newGlobal[cat.id] = [randomVal];
+                        else newGlobal[cat.id] = randomVal;
+                    }
                 }
-            }
+            });
 
-            // If a theme is selected, filter options further by keywords
-            if (theme && keywords.length > 0) {
-                const themedOptions = validOptions.filter(opt =>
-                    keywords.some(k => opt.value.toLowerCase().includes(k))
-                );
-                // If theme matches found, prefer them. Otherwise fallback to all valid options.
-                if (themedOptions.length > 0) {
-                    validOptions = themedOptions;
-                }
-            }
-
-            if (validOptions.length > 0) {
-                const randomVal = validOptions[Math.floor(Math.random() * validOptions.length)].value;
-                if (cat.multiSelect) {
-                    (newValues as any)[cat.id] = [randomVal];
-                } else {
-                    (newValues as any)[cat.id] = randomVal;
-                }
-            }
+            newSubjects[activeIndex] = newSubject;
+            return { ...prev, subjects: newSubjects, global: newGlobal };
         });
-        setState(prev => ({ ...prev, ...newValues }));
     };
 
     const handleClear = () => {
-        setState(prev => ({
-            ...prev,
-            nationality: '', age: '', bodyType: [], role: '', faceShape: '', eyeGaze: '',
-            hairColor: [], hairStyle: [], appearance: [], clothing: [], clothingDetail: [],
-            accessories: [], action: '', hands: '', composition: '', era: '', environment: '',
-            lighting: [], colorPalette: '', camera: '', artStyle: [], mood: [], aspectRatio: '',
-            cameraMovement: '', motionStrength: '',
-            animalSpecies: '', animalFur: [], vehicleType: '', vehicleColor: '',
-            quality: prev.subjectType === 'human'
-                ? ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face']
-                : ['masterpiece', 'best quality', '8k', 'highly detailed'],
-            preservation: [],
-            negativePrompt: '',
-            useNegativePrompt: true,
-            referenceImages: []
-        }));
+        setState(prev => {
+            const activeIndex = prev.subjects.findIndex(s => s.id === prev.activeSubjectId);
+            if (activeIndex === -1) return prev;
+
+            const clearedSubject = createDefaultSubject(prev.activeSubjectId, prev.subjects[activeIndex].subjectType);
+            // Preserve type and gender preferences if desired, or reset?
+            // "Clear" typically means reset to default.
+            // Let's keep the TYPE but reset fields.
+            clearedSubject.subjectType = prev.subjects[activeIndex].subjectType;
+            clearedSubject.gender = prev.subjects[activeIndex].gender;
+
+            const newSubjects = [...prev.subjects];
+            newSubjects[activeIndex] = clearedSubject;
+
+            // Clear Global but keep defaults
+            const clearedGlobal: GlobalConfig = {
+                ...defaultGlobal,
+                referenceImages: []
+            };
+
+            return { ...prev, subjects: newSubjects, global: clearedGlobal };
+        });
+    };
+
+    // --- Persistence / Migration ---
+    const importState = (inputState: any) => {
+        if (!inputState) return;
+
+        // Check if it's already new format
+        if (inputState.global && inputState.subjects && Array.isArray(inputState.subjects)) {
+            setState(inputState as PortraitState);
+            return;
+        }
+
+        // Migration Logic for Legacy State
+        const newId = `subject-${Date.now()}`;
+        const prevSubjectType = inputState.subjectType || 'human';
+        const newSubject = createDefaultSubject(newId, prevSubjectType);
+
+        // Map Subject Fields
+        const subjectKeys: (keyof SubjectConfig)[] = [
+            'gender', 'nationality', 'age', 'role', 'bodyType', 'faceShape', 'eyeGaze',
+            'hairColor', 'hairStyle', 'appearance', 'clothing', 'clothingDetail', 'accessories',
+            'action', 'hands', 'mood', 'animalSpecies', 'animalFur', 'vehicleType', 'vehicleColor'
+        ];
+
+        subjectKeys.forEach(key => {
+            if (inputState[key] !== undefined) {
+                (newSubject as any)[key] = inputState[key];
+            }
+        });
+
+        // Map Global Fields
+        const newGlobal: GlobalConfig = { ...defaultGlobal };
+        const globalKeys: (keyof GlobalConfig)[] = [
+            'taskMode', 'composition', 'era', 'environment', 'lighting', 'colorPalette',
+            'camera', 'artStyle', 'aspectRatio', 'cameraMovement', 'motionStrength',
+            'quality', 'preservation', 'negativePrompt', 'useNegativePrompt', 'referenceImages'
+        ];
+
+        globalKeys.forEach(key => {
+            if (inputState[key] !== undefined) {
+                (newGlobal as any)[key] = inputState[key];
+            }
+        });
+
+        setState({
+            global: newGlobal,
+            subjects: [newSubject],
+            activeSubjectId: newId
+        });
     };
 
     const addReferenceImage = (img: ReferenceImage) => {
-        setState(prev => ({ ...prev, referenceImages: [img, ...prev.referenceImages] }));
+        setState(prev => ({ ...prev, global: { ...prev.global, referenceImages: [img, ...prev.global.referenceImages] } }));
     };
 
     const updateReferenceImage = (id: string, updates: Partial<ReferenceImage>) => {
         setState(prev => ({
             ...prev,
-            referenceImages: prev.referenceImages.map(img => img.id === id ? { ...img, ...updates } : img)
+            global: {
+                ...prev.global,
+                referenceImages: prev.global.referenceImages.map(img => img.id === id ? { ...img, ...updates } : img)
+            }
         }));
     };
 
     const removeReferenceImage = (id: string) => {
         setState(prev => ({
             ...prev,
-            referenceImages: prev.referenceImages.filter(img => img.id !== id)
+            global: {
+                ...prev.global,
+                referenceImages: prev.global.referenceImages.filter(img => img.id !== id)
+            }
         }));
     };
 
     return {
         state,
         setState,
+        importState, // Exported new function
+        addSubject,
+        removeSubject,
+        setActiveSubject,
         handleSelect,
         handleSubjectTypeSelect,
         handleGenderSelect,

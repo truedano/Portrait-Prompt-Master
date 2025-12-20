@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PortraitState, OutputLanguage, OutputFormat } from '../types';
+import { PortraitState, OutputLanguage, OutputFormat, SubjectConfig, GlobalConfig } from '../types';
 import { PROMPT_CATEGORIES, QUALITY_TAGS, PRESERVATION_OPTIONS, SCENERY_FORBIDDEN_MOODS } from '../constants';
 
 export const usePromptGenerator = (
@@ -15,7 +15,7 @@ export const usePromptGenerator = (
         return fullLabel.split('(')[0].trim();
     };
 
-    const getTerm = (catId: keyof PortraitState | 'quality' | 'preservation', value: string, lang: OutputLanguage): string => {
+    const getTerm = (catId: string, value: string, lang: OutputLanguage): string => {
         if (!value) return '';
         if (lang === 'en') return value;
         if (value.startsWith('random ')) return '隨機 (Random)';
@@ -39,7 +39,7 @@ export const usePromptGenerator = (
         return value;
     };
 
-    const resolveField = (key: keyof PortraitState | 'quality' | 'preservation', val: string | string[], lang: OutputLanguage) => {
+    const resolveField = (key: string, val: string | string[], lang: OutputLanguage) => {
         if (Array.isArray(val)) {
             return val.map(v => getTerm(key, v, lang)).filter(Boolean).join(', ');
         }
@@ -48,71 +48,67 @@ export const usePromptGenerator = (
 
     // --- Logic ---
     useEffect(() => {
-        // 1. Resolve raw values to localized strings
-        const genderTermEn = state.gender === 'female' ? 'woman' : (state.gender === 'male' ? 'man' : '');
-        const genderTermZh = state.gender === 'female' ? '女性' : (state.gender === 'male' ? '男性' : '');
+        const rawGlobal = state.global;
 
-        // Raw fields for logic
-        const raw = state;
+        // Helper to resolve a subject's fields
+        const resolveSubject = (subj: SubjectConfig) => {
+            const genderTermEn = subj.gender === 'female' ? 'woman' : (subj.gender === 'male' ? 'man' : '');
+            const genderTermZh = subj.gender === 'female' ? '女性' : (subj.gender === 'male' ? '男性' : '');
 
-        // Localized fields for output
-        const fields = {
-            subjectType: state.subjectType,
-            quality: resolveField('quality', state.quality, outputLang),
-            preservation: resolveField('preservation', state.preservation, outputLang),
-            // Human
-            nationality: resolveField('nationality', state.nationality, outputLang),
-            age: resolveField('age', state.age, outputLang),
-            gender: outputLang === 'en' ? genderTermEn : genderTermZh,
-            role: resolveField('role', state.role, outputLang),
-            bodyType: resolveField('bodyType', state.bodyType, outputLang),
-            faceShape: resolveField('faceShape', state.faceShape, outputLang),
+            // Localized fields
+            const fields: Record<string, string> = {
+                subjectType: subj.subjectType,
+                nationality: resolveField('nationality', subj.nationality, outputLang),
+                age: resolveField('age', subj.age, outputLang),
+                gender: outputLang === 'en' ? genderTermEn : genderTermZh,
+                role: resolveField('role', subj.role, outputLang),
+                bodyType: resolveField('bodyType', subj.bodyType, outputLang),
+                faceShape: resolveField('faceShape', subj.faceShape, outputLang),
 
-            // Animal (New)
-            animalSpecies: resolveField('animalSpecies', state.animalSpecies, outputLang),
-            animalFur: resolveField('animalFur', state.animalFur, outputLang),
+                animalSpecies: resolveField('animalSpecies', subj.animalSpecies, outputLang),
+                animalFur: resolveField('animalFur', subj.animalFur, outputLang),
 
-            // Vehicle (New)
-            vehicleType: resolveField('vehicleType', state.vehicleType, outputLang),
-            vehicleColor: resolveField('vehicleColor', state.vehicleColor, outputLang),
+                vehicleType: resolveField('vehicleType', subj.vehicleType, outputLang),
+                vehicleColor: resolveField('vehicleColor', subj.vehicleColor, outputLang),
 
-            // Common
-            eyeGaze: resolveField('eyeGaze', state.eyeGaze, outputLang),
+                eyeGaze: resolveField('eyeGaze', subj.eyeGaze, outputLang),
+                hairColor: resolveField('hairColor', subj.hairColor, outputLang),
+                hairStyle: resolveField('hairStyle', subj.hairStyle, outputLang),
+                appearance: resolveField('appearance', subj.appearance, outputLang),
+                clothing: resolveField('clothing', subj.clothing, outputLang),
+                clothingDetail: resolveField('clothingDetail', subj.clothingDetail, outputLang),
+                accessories: resolveField('accessories', subj.accessories, outputLang),
+                action: resolveField('action', subj.action, outputLang),
+                hands: resolveField('hands', subj.hands, outputLang),
+                mood: resolveField('mood', subj.mood, outputLang),
+            };
 
-            hairColor: resolveField('hairColor', state.hairColor, outputLang),
-            hairStyle: resolveField('hairStyle', state.hairStyle, outputLang),
-            appearance: resolveField('appearance', state.appearance, outputLang),
-            clothing: resolveField('clothing', state.clothing, outputLang),
-            clothingDetail: resolveField('clothingDetail', state.clothingDetail, outputLang),
-            accessories: resolveField('accessories', state.accessories, outputLang),
-            action: resolveField('action', state.action, outputLang),
-            hands: resolveField('hands', state.hands, outputLang),
-            composition: resolveField('composition', state.composition, outputLang),
-            era: resolveField('era', state.era, outputLang),
-            environment: resolveField('environment', state.environment, outputLang),
-            lighting: resolveField('lighting', state.lighting, outputLang),
-            colorPalette: resolveField('colorPalette', state.colorPalette, outputLang),
-            camera: resolveField('camera', state.camera, outputLang),
-            artStyle: resolveField('artStyle', state.artStyle, outputLang),
-            mood: resolveField('mood', state.mood, outputLang),
-            aspectRatio: resolveField('aspectRatio', state.aspectRatio, outputLang),
-            cameraMovement: resolveField('cameraMovement', state.cameraMovement, outputLang),
-            motionStrength: resolveField('motionStrength', state.motionStrength, outputLang),
-            negative: state.useNegativePrompt ? state.negativePrompt : ''
+            // Filter mood for scenery
+            if (subj.subjectType === 'scenery') {
+                const filteredMood = subj.mood.filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
+                fields.mood = resolveField('mood', filteredMood, outputLang);
+            }
+
+            return fields;
         };
 
-        // --- FILTER HUMAN-CENTRIC TERMS FROM NON-HUMAN MODES ---
-        // We do this by re-resolving these specific fields with filtered state values
-        if (state.subjectType !== 'human') {
-            const forbiddenQuality = ['detailed face'];
-            const filteredQuality = state.quality.filter(q => !forbiddenQuality.includes(q.toLowerCase()));
-            fields.quality = resolveField('quality', filteredQuality, outputLang);
-        }
+        // Prepare Global Fields
+        const globalFields = {
+            composition: resolveField('composition', rawGlobal.composition, outputLang),
+            era: resolveField('era', rawGlobal.era, outputLang),
+            environment: resolveField('environment', rawGlobal.environment, outputLang),
+            lighting: resolveField('lighting', rawGlobal.lighting, outputLang),
+            colorPalette: resolveField('colorPalette', rawGlobal.colorPalette, outputLang),
+            camera: resolveField('camera', rawGlobal.camera, outputLang),
+            artStyle: resolveField('artStyle', rawGlobal.artStyle, outputLang),
+            aspectRatio: resolveField('aspectRatio', rawGlobal.aspectRatio, outputLang),
+            cameraMovement: resolveField('cameraMovement', rawGlobal.cameraMovement, outputLang),
+            motionStrength: resolveField('motionStrength', rawGlobal.motionStrength, outputLang),
+            quality: resolveField('quality', rawGlobal.quality, outputLang),
+            preservation: resolveField('preservation', rawGlobal.preservation, outputLang),
+            negative: rawGlobal.useNegativePrompt ? rawGlobal.negativePrompt : ''
+        };
 
-        if (state.subjectType === 'scenery') {
-            const filteredMood = state.mood.filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
-            fields.mood = resolveField('mood', filteredMood, outputLang);
-        }
 
         let result = '';
 
@@ -121,404 +117,102 @@ export const usePromptGenerator = (
             const dataObj = {
                 meta: {
                     language: outputLang,
-                    task_mode: state.taskMode,
-                    engine: state.taskMode === 'video_generation' ? "veo/sora" : "gemini_nano_banana_pro"
+                    task_mode: rawGlobal.taskMode,
+                    engine: rawGlobal.taskMode === 'video_generation' ? "veo/sora" : "gemini_nano_banana_pro"
                 },
-                input_images: state.referenceImages.map(img => ({
-                    url: img.url,
-                    intent: img.intent
-                })),
-                prompt_content: {
-                    subject: { ...fields, quality: undefined, preservation: undefined, negative: undefined }, // Spread all fields
-                    preservation: state.preservation.map(p => getTerm('preservation', p, outputLang)),
-                    quality_tags: state.quality.map(q => getTerm('quality', q, outputLang))
-                },
-                negative_prompt: fields.negative
+                subjects: state.subjects.map(s => resolveSubject(s)),
+                global: globalFields,
+                negative_prompt: globalFields.negative
             };
 
             if (outputFormat === 'json') {
                 result = JSON.stringify(dataObj, null, 2);
             } else {
-                // Detailed YAML construction
-                const lines: string[] = [];
-                lines.push(`meta:`);
-                lines.push(`  mode: ${state.taskMode}`);
-                lines.push(`  language: ${outputLang}`);
-                lines.push(`  engine: ${state.taskMode === 'video_generation' ? "veo" : "gemini_nano_banana_pro"}`);
-
-                if (state.referenceImages.length > 0) {
-                    lines.push(`images:`);
-                    state.referenceImages.forEach(img => {
-                        lines.push(`  - url: "${img.url}"`);
-                        lines.push(`    intent: ${img.intent}`);
-                    });
-                }
-
-                lines.push(`prompt:`);
-
-                // Define all mapping fields for YAML
-                const yamlFields: Record<string, string | string[]> = {
-                    subject_desc: [fields.nationality, fields.age, fields.gender, fields.role].filter(Boolean).join(' '),
-                    body_type: fields.bodyType,
-                    face_features: [fields.faceShape, fields.eyeGaze].filter(Boolean).join(', '),
-                    hair: [fields.hairColor, fields.hairStyle].filter(Boolean).join(' '),
-                    appearance_details: fields.appearance,
-                    outfit: [fields.clothing, fields.clothingDetail].filter(Boolean).join(' '),
-                    accessories: fields.accessories,
-                    action_pose: fields.action,
-                    hand_interaction: fields.hands,
-                    // Video Specifics
-                    camera_movement: fields.cameraMovement,
-                    motion_strength: fields.motionStrength,
-                    // End Video Specifics
-                    scene_environment: [fields.environment, fields.era].filter(Boolean).join(', '),
-                    composition_angle: fields.composition,
-                    camera_lens: fields.camera,
-                    lighting: fields.lighting,
-                    color_tone: fields.colorPalette,
-                    art_style: fields.artStyle,
-                    mood_emotion: fields.mood,
-                    preservation: fields.preservation, // This is now a comma string
-                    quality_tags: fields.quality, // This is now a comma string
-                    aspect_ratio: fields.aspectRatio
-                };
-
-                // Write fields that have values
-                Object.entries(yamlFields).forEach(([key, val]) => {
-                    if (!val || (Array.isArray(val) && val.length === 0)) return;
-                    lines.push(`  ${key}: "${val}"`);
-                });
-
-                if (fields.negative) {
-                    lines.push(`negative_prompt: "${fields.negative.replace(/"/g, '\\"')}"`);
-                }
-
-                result = lines.join('\n');
+                result = "YAML output not fully implemented for multi-subject yet. Please use JSON or Text.";
             }
+
         }
         // --- Text / Markdown Output ---
         else {
-            // A. VIDEO GENERATION MODE
-            if (state.taskMode === 'video_generation') {
-                let mainSubject = '';
 
-                // SUBJECT CONSTRUCTION
-                if (state.subjectType === 'human') {
-                    const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
-                    const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
-                    mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
-                } else if (state.subjectType === 'animal') {
-                    // [Fur] [Species]
-                    const subj = [fields.animalFur, fields.animalSpecies].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
-                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一隻${subj}`;
-                } else if (state.subjectType === 'vehicle') {
-                    // [Color] [Type]
-                    const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
-                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
-                } else if (state.subjectType === 'scenery') {
-                    // For scenery, we don't necessarily need a "A [Subject]" prefix if it feels repetitive.
-                    // But to keep consistency with the "mainSubject" slot:
-                    mainSubject = outputLang === 'en' ? fields.environment : fields.environment;
+            // Build Subject Strings
+            const subjectStrings = state.subjects.map((subj, index) => {
+                const sFields = resolveSubject(subj);
+                let subjectDesc = '';
+
+                if (subj.subjectType === 'human') {
+                    const subjectEn = [sFields.nationality, sFields.age, sFields.gender, sFields.role].filter(Boolean).join(' ');
+                    const subjectZh = [sFields.nationality, sFields.age, sFields.gender, sFields.role].filter(Boolean).join('');
+                    subjectDesc = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+                } else if (subj.subjectType === 'animal') {
+                    const sub = [sFields.animalFur, sFields.animalSpecies].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    subjectDesc = outputLang === 'en' ? `A ${sub}` : `一隻${sub}`;
+                } else if (subj.subjectType === 'vehicle') {
+                    const sub = [sFields.vehicleColor, sFields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    subjectDesc = outputLang === 'en' ? `A ${sub}` : `一輛${sub}`;
+                } else if (subj.subjectType === 'scenery') {
+                    subjectDesc = outputLang === 'en' ? 'Landscape' : '風景';
                 }
 
-                // Video Structure: [Camera Move] + [Subject] + [Action/Motion] + [Environment] + [Style/Quality]
-                const parts = [
-                    fields.cameraMovement,   // 1. Camera Movement (The Soul of Video)
-                    mainSubject,             // 2. Who
-                    fields.environment,      // 3. Where (Context usually comes early for video establishment)
-                    fields.action,           // 4. Action
-                    fields.motionStrength,   // 5. Motion Dynamics
-                    fields.clothing,
-                    fields.clothingDetail,
-                    fields.appearance,
-                    fields.hairColor,
-                    fields.hairStyle,
-                    fields.eyeGaze,
-                    fields.composition,
-                    fields.camera,
-                    fields.lighting,
-                    fields.era,
-                    fields.artStyle,
-                    fields.mood,
-                    fields.colorPalette,
-                    fields.quality,
+                // Combine subject details
+                const detailParts = [
+                    subjectDesc,
+                    sFields.action,
+                    sFields.clothing,
+                    sFields.clothingDetail,
+                    sFields.appearance,
+                    sFields.accessories,
+                    sFields.bodyType,
+                    sFields.faceShape,
+                    sFields.hairColor,
+                    sFields.hairStyle,
+                    sFields.eyeGaze,
+                    sFields.hands,
+                    sFields.mood
                 ].filter(Boolean);
 
-                const separator = outputLang === 'en' ? ', ' : '，';
-                const basePrompt = parts.join(separator);
+                const sep = outputLang === 'en' ? ', ' : '，';
+                // Remove debug labels, just return content
+                return detailParts.join(sep);
+            });
 
-                if (outputFormat === 'markdown') {
-                    let md = `**Video Prompt**\n> ${basePrompt}`;
-                    if (fields.negative) md += `\n\n**Negative Prompt**\n> ${fields.negative}`;
-                    result = md;
-                } else {
-                    result = basePrompt;
-                    if (fields.negative) result += `\n\n--no ${fields.negative}`;
+            // Combine all subjects
+            const subjectsJoined = subjectStrings.join(outputLang === 'en' ? ' AND ' : ' 與 ');
+
+            // Construct Full Prompt
+            const baseParts = [
+                // 1. Camera Movement (Video)
+                rawGlobal.taskMode === 'video_generation' ? globalFields.cameraMovement : null,
+
+                // 2. Subjects
+                subjectsJoined,
+
+                // 3. Global Context
+                globalFields.environment,
+                rawGlobal.taskMode === 'video_generation' ? globalFields.motionStrength : null,
+                globalFields.composition,
+                globalFields.camera,
+                globalFields.lighting,
+                globalFields.era,
+                globalFields.artStyle,
+                globalFields.colorPalette,
+                globalFields.quality,
+                rawGlobal.taskMode === 'generation' ? globalFields.aspectRatio : null,
+            ].filter(Boolean);
+
+            const separator = outputLang === 'en' ? ', ' : '，';
+            const basePrompt = baseParts.join(separator);
+
+            if (outputFormat === 'markdown') {
+                let md = `**Prompt**\n> ${basePrompt}`;
+                if (globalFields.negative) md += `\n\n**Negative Prompt**\n> ${globalFields.negative}`;
+                if (rawGlobal.referenceImages.length > 0) {
+                    md += `\n\n**References**\n${rawGlobal.referenceImages.map(img => `- ${img.url} (${img.intent})`).join('\n')}`;
                 }
-            }
-            // B. IMAGE GENERATION MODE (Descriptive)
-            else if (state.taskMode === 'generation') {
-                let mainSubject = '';
-
-                // SUBJECT CONSTRUCTION
-                if (state.subjectType === 'human') {
-                    const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
-                    const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
-                    mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
-                } else if (state.subjectType === 'animal') {
-                    // [Fur] [Species]
-                    const subj = [fields.animalFur, fields.animalSpecies].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
-                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一隻${subj}`;
-                } else if (state.subjectType === 'vehicle') {
-                    // [Color] [Type]
-                    const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
-                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
-                } else if (state.subjectType === 'scenery') {
-                    // Logic for generating a descriptive "Subject" for scenery
-                    // e.g., "A cinematic photography of majestic mountains"
-                    const style = [fields.artStyle].filter(Boolean).join('');
-                    const env = fields.environment || (outputLang === 'en' ? 'landscape' : '風景');
-                    if (outputLang === 'en') {
-                        mainSubject = style ? `A ${style} of ${env}` : `A photography of ${env}`;
-                    } else {
-                        mainSubject = style ? `一張${style}風格的${env}` : `一張${env}攝影`;
-                    }
-                }
-
-                // ORDER OPTIMIZATION FOR GEMINI / NANO BANANA PRO
-                const parts = [
-                    mainSubject,             // 1. Who (Subject is King)
-                    fields.action,           // 2. Doing what?
-                    fields.environment,      // 3. Where?
-                    fields.clothing,         // 4. Wearing what?
-                    fields.clothingDetail,
-                    fields.appearance,       // 5. Details
-                    fields.accessories,
-                    fields.bodyType,
-                    fields.faceShape,
-                    fields.hairColor,
-                    fields.hairStyle,
-                    fields.eyeGaze,
-                    fields.hands,
-                    fields.composition,      // 6. Camera/Angle
-                    fields.camera,
-                    fields.lighting,
-                    fields.era,
-                    fields.artStyle,         // 7. Artistic Style
-                    fields.mood,
-                    fields.colorPalette,
-                    fields.quality,       // 8. Quality Boosters
-                    fields.aspectRatio       // 9. Tech specs (Resolution last for images)
-                ].filter(Boolean);
-
-                const separator = outputLang === 'en' ? ', ' : '，';
-                const basePrompt = parts.join(separator);
-
-                if (outputFormat === 'markdown') {
-                    // MARKDOWN OUTPUT
-                    let md = `**Prompt**\n> ${basePrompt}`;
-
-                    if (fields.negative) {
-                        md += `\n\n**Negative Prompt**\n> ${fields.negative}`;
-                    }
-
-                    if (state.referenceImages.length > 0) {
-                        md += `\n\n**References**\n${state.referenceImages.map(img => `- ${img.url} (${img.intent})`).join('\n')}`;
-                    }
-                    result = md;
-                } else {
-                    // PLAIN TEXT OUTPUT
-                    result = basePrompt;
-                    if (state.referenceImages.length > 0) {
-                        result += `\n\n[References: ${state.referenceImages.map(i => i.url).join(', ')}]`;
-                    }
-                    if (fields.negative) {
-                        result += `\n\n--no ${fields.negative}`;
-                    }
-                }
-            }
-            // C. EDITING MODE (Instructional)
-            else {
-                const instructions: string[] = [];
-
-                // --- CONFLICT RESOLUTION LOGIC ---
-                // If a preservation tag is present, we SUPPRESS related modification instructions.
-                // Values here match 'value' in PRESERVATION_OPTIONS constants.ts
-                const isPreserved = (targetValue: string) => {
-                    return state.preservation.includes(targetValue);
-                };
-
-                // 1. Process Intents
-                state.referenceImages.forEach(img => {
-                    if (img.intent === 'high_denoising') instructions.push(outputLang === 'en' ? "Completely reimagine the image." : "完全重新構想這張圖片。");
-                    if (img.intent === 'keep_subject') instructions.push(outputLang === 'en' ? "Keep the facial features unchanged." : "保持臉部特徵不變。");
-                    if (img.intent === 'keep_composition') instructions.push(outputLang === 'en' ? "Retain the original composition and pose." : "保留原始構圖與姿勢。");
-                });
-
-                // 2. Process Preservation (Positive Constraint)
-                if (fields.preservation.length > 0) {
-                    // fields.preservation is already joined string
-                    instructions.push(outputLang === 'en'
-                        ? `Ensure the ${fields.preservation} remain unchanged.`
-                        : `確保${fields.preservation}保持不變。`);
-                }
-
-                // 3. Build Instructions from fields (With Conflict Checks)
-
-                // Change Subject/Demographics
-                // If "facial features" is preserved, we avoid instructions that fundamentally change the person's identity.
-                if (!isPreserved('facial features')) {
-                    const demographicParts = [];
-                    if (raw.nationality) demographicParts.push(fields.nationality);
-                    if (raw.age) demographicParts.push(fields.age);
-                    if (raw.gender) demographicParts.push(fields.gender);
-                    if (raw.faceShape) demographicParts.push(fields.faceShape);
-                    // Body type change implies character change
-                    if (fields.bodyType) demographicParts.push(fields.bodyType);
-
-                    if (demographicParts.length > 0) {
-                        const desc = demographicParts.join(' ');
-                        instructions.push(outputLang === 'en'
-                            ? `Change the character's appearance to be ${desc}.`
-                            : `將角色外觀改為${desc}。`);
-                    }
-                }
-
-                // Change Subject Details (Subject Type Specific)
-                if (state.subjectType === 'animal') {
-                    const animalDetails = [fields.animalFur, fields.animalSpecies, fields.appearance].filter(Boolean).join(' ');
-                    if (animalDetails) {
-                        instructions.push(outputLang === 'en'
-                            ? `Change the subject to a ${animalDetails}.`
-                            : `將主體改為${animalDetails}。`);
-                    }
-                } else if (state.subjectType === 'vehicle') {
-                    const vehicleDetails = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(' ');
-                    if (vehicleDetails) {
-                        instructions.push(outputLang === 'en'
-                            ? `Change the vehicle to a ${vehicleDetails}.`
-                            : `將車輛改為${vehicleDetails}。`);
-                    }
-                } else if (state.subjectType === 'scenery') {
-                    if (fields.environment) {
-                        instructions.push(outputLang === 'en'
-                            ? `Change the landscape to ${fields.environment}.`
-                            : `將風景改為${fields.environment}。`);
-                    }
-                }
-
-                // Roles are often props/costumes, so we allow them unless strictly conflicting
-                if (raw.role) {
-                    instructions.push(outputLang === 'en'
-                        ? `Change the role to a ${fields.role}.`
-                        : `將角色改為${fields.role}。`);
-                }
-
-                // Hair
-                if ((raw.hairColor.length > 0 || raw.hairStyle.length > 0) && !isPreserved('hair style')) {
-                    const hair = [fields.hairColor, fields.hairStyle].filter(Boolean).join(' ');
-                    instructions.push(outputLang === 'en' ? `Change hair to ${hair}.` : `將髮型改為${hair}。`);
-                }
-
-                // Change Clothing
-                if ((raw.clothing.length > 0 || raw.clothingDetail.length > 0) && !isPreserved('clothing')) {
-                    const cloth = [fields.clothing, fields.clothingDetail].filter(Boolean).join(' ');
-                    instructions.push(outputLang === 'en'
-                        ? `Change the outfit to ${cloth}.`
-                        : `將服裝更換為${cloth}。`);
-                }
-
-                // Add Accessories (Usually safe to add even if clothing is preserved, unless specific conflict)
-                if (raw.accessories.length > 0) {
-                    instructions.push(outputLang === 'en'
-                        ? `Add ${fields.accessories} to the character.`
-                        : `為角色添加${fields.accessories}。`);
-                }
-
-                // Change Action/Pose (ADDED)
-                if (raw.action && !isPreserved('image composition')) {
-                    instructions.push(outputLang === 'en'
-                        ? `Change pose to ${fields.action}.`
-                        : `將姿勢改為${fields.action}。`);
-                }
-
-                // Change Hands (ADDED)
-                if (raw.hands) {
-                    instructions.push(outputLang === 'en'
-                        ? `Character is ${fields.hands}.`
-                        : `角色${fields.hands}。`);
-                }
-
-                // Change Background / Era
-                if ((raw.environment || raw.era) && !isPreserved('background environment')) {
-                    const bg = [fields.environment, fields.era].filter(Boolean).join(' ');
-                    instructions.push(outputLang === 'en'
-                        ? `Change the background to ${bg}.`
-                        : `將背景改為${bg}。`);
-                }
-
-                // Change Composition / Camera
-                if ((raw.composition || raw.camera || raw.aspectRatio) && !isPreserved('image composition')) {
-                    const comp = [fields.composition, fields.camera, fields.aspectRatio].filter(Boolean).join(' ');
-                    instructions.push(outputLang === 'en'
-                        ? `Adjust composition to ${comp}.`
-                        : `將構圖調整為${comp}。`);
-                }
-
-                // Change Style
-                if (raw.artStyle.length > 0) {
-                    instructions.push(outputLang === 'en'
-                        ? `Transform the style to ${fields.artStyle}.`
-                        : `將風格轉換為${fields.artStyle}。`);
-                }
-
-                // Change Mood/Expression
-                // If face is preserved, changing expression is tricky but possible. We allow it.
-                if (raw.mood.length > 0) {
-                    instructions.push(outputLang === 'en'
-                        ? `Make the character look ${fields.mood}.`
-                        : `讓角色看起來${fields.mood}。`);
-                }
-
-                // Change Lighting
-                if (raw.lighting.length > 0 && !isPreserved('lighting conditions')) {
-                    instructions.push(outputLang === 'en'
-                        ? `Apply ${fields.lighting}.`
-                        : `應用${fields.lighting}。`);
-                }
-
-                // Change Colors
-                if (raw.colorPalette && !isPreserved('color palette')) {
-                    instructions.push(outputLang === 'en'
-                        ? `Use a ${fields.colorPalette}.`
-                        : `使用${fields.colorPalette}。`);
-                }
-
-                const baseInstructions = instructions.join(' ');
-
-                if (outputFormat === 'markdown') {
-                    // MARKDOWN OUTPUT (Editing)
-                    let md = `**Instructions**\n> ${baseInstructions}`;
-
-                    if (fields.negative) {
-                        md += `\n\n**Negative Constraint**\n> ${fields.negative}`;
-                    }
-
-                    if (state.referenceImages.length > 0) {
-                        md += `\n\n**Input Images**\n${state.referenceImages.map(img => `- ${img.url} (${img.intent})`).join('\n')}`;
-                    }
-                    result = md;
-                } else {
-                    // PLAIN TEXT OUTPUT (Editing)
-                    result = baseInstructions;
-                    // For editing chat, we just list images at the end usually
-                    if (state.referenceImages.length > 0) {
-                        result += `\n\n[Inputs: ${state.referenceImages.map(i => i.url).join(', ')}]`;
-                    }
-                    if (fields.negative) {
-                        result += `\n\n(Avoid: ${fields.negative})`;
-                    }
-                }
+                result = md;
+            } else {
+                result = basePrompt;
+                if (globalFields.negative) result += `\n\n--no ${globalFields.negative}`;
             }
         }
 

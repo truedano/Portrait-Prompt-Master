@@ -33,6 +33,54 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
     );
 
+    const getSummary = (state: any) => {
+        // 1. New Multi-Subject State
+        if (state.subjects && Array.isArray(state.subjects)) {
+            const subjects = state.subjects.map((s: any) => {
+                const parts = [];
+                if (s.subjectType === 'human') {
+                    const gender = s.gender === 'female' ? '女' : (s.gender === 'male' ? '男' : '');
+                    parts.push(gender);
+                    if (s.nationality) parts.push(s.nationality);
+                    if (s.role) parts.push(s.role);
+                } else if (s.subjectType === 'animal') {
+                    if (s.animalFur) parts.push(s.animalFur);
+                    if (s.animalSpecies) parts.push(s.animalSpecies);
+                } else if (s.subjectType === 'vehicle') {
+                    if (s.vehicleColor) parts.push(s.vehicleColor);
+                    if (s.vehicleType) parts.push(s.vehicleType);
+                } else if (s.subjectType === 'scenery') {
+                    if (state.global?.environment) return state.global.environment;
+                    return '風景';
+                }
+                return parts.join(' ') || '未定義主體';
+            });
+            return subjects.join(' + ');
+        }
+
+        // 2. Legacy Flat State
+        if (state.subjectType === 'animal') {
+            return [state.animalFur, state.animalSpecies, state.artStyle?.[0]].filter(Boolean).join(', ');
+        } else if (state.subjectType === 'vehicle') {
+            return [state.vehicleColor, state.vehicleType, state.artStyle?.[0]].filter(Boolean).join(', ');
+        } else if (state.subjectType === 'scenery') {
+            return [state.environment, state.artStyle?.[0]].filter(Boolean).join(', ');
+        } else {
+            // Default Human
+            return [
+                state.nationality,
+                state.gender === 'female' ? '女性' : (state.gender === 'male' ? '男性' : ''),
+                state.role,
+                state.artStyle?.[0]
+            ].filter(Boolean).join(', ');
+        }
+    };
+
+    const getTaskMode = (state: any) => {
+        if (state.global?.taskMode) return state.global.taskMode;
+        return state.taskMode || 'generation';
+    };
+
     const renderList = (items: HistoryItem[], emptyMsg: string) => {
         if (items.length === 0) {
             return (
@@ -45,31 +93,15 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
         return (
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {items.map(item => {
-                    // Generate a quick summary label if not present
-                    let summary = '';
-                    if (item.state.subjectType === 'animal') {
-                        summary = [item.state.animalFur, item.state.animalSpecies, item.state.artStyle?.[0]].filter(Boolean).join(', ');
-                    } else if (item.state.subjectType === 'vehicle') {
-                        summary = [item.state.vehicleColor, item.state.vehicleType, item.state.artStyle?.[0]].filter(Boolean).join(', ');
-                    } else if (item.state.subjectType === 'scenery') {
-                        summary = [item.state.environment, item.state.artStyle?.[0]].filter(Boolean).join(', ');
-                    } else {
-                        // Default Human (or old records where subjectType is undefined => Human)
-                        summary = [
-                            item.state.nationality,
-                            item.state.gender === 'female' ? '女性' : (item.state.gender === 'male' ? '男性' : ''),
-                            item.state.role,
-                            item.state.artStyle?.[0]
-                        ].filter(Boolean).join(', ');
-                    }
-                    if (!summary) summary = '未命名設定';
+                    const summary = getSummary(item.state) || '未命名設定';
+                    const taskMode = getTaskMode(item.state);
 
                     return (
                         <div key={item.id} className="glass-card hover:bg-slate-800/60 p-3 rounded-lg flex items-center justify-between group transition-all">
                             <div className="flex-1 cursor-pointer" onClick={() => onLoad(item.state)}>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${item.state.taskMode === 'video_generation' ? 'bg-cyan-900/40 border-cyan-700 text-cyan-300' : 'bg-indigo-900/40 border-indigo-700 text-indigo-300'}`}>
-                                        {item.state.taskMode === 'video_generation' ? 'Video' : 'Image'}
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${taskMode === 'video_generation' ? 'bg-cyan-900/40 border-cyan-700 text-cyan-300' : 'bg-indigo-900/40 border-indigo-700 text-indigo-300'}`}>
+                                        {taskMode === 'video_generation' ? 'Video' : 'Image'}
                                     </span>
                                     <span className="text-xs text-slate-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
                                 </div>

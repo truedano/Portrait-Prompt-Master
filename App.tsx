@@ -15,6 +15,10 @@ const App: React.FC = () => {
   const {
     state,
     setState,
+    importState, // Use importState for migration
+    addSubject,
+    removeSubject,
+    setActiveSubject,
     handleSelect,
     handleSubjectTypeSelect,
     handleGenderSelect,
@@ -39,6 +43,10 @@ const App: React.FC = () => {
     removeFavorite, // exposed but used via toggleFavorite mainly
     clearHistory
   } = useHistory();
+
+  // --- Derived State ---
+  const activeSubject = state.subjects.find(s => s.id === state.activeSubjectId) || state.subjects[0];
+  const global = state.global;
 
   // --- UI State (Layout/View only) ---
   const [outputLang, setOutputLang] = useState<OutputLanguage>('en');
@@ -102,8 +110,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLoadState = (loadedState: PortraitState) => {
-    setState(loadedState);
+  const handleLoadState = (loadedState: any) => {
+    importState(loadedState);
     // Optional: close panel on mobile, keep open on desktop?
     // setIsHistoryOpen(false); 
   };
@@ -172,7 +180,7 @@ const App: React.FC = () => {
   const CATEGORY_GROUPS = [
     {
       id: 'character',
-      title: '主體特徵 (Subject Details)',
+      title: '主體特徵 (Subject)',
       icon: <UserIcon />,
       categoryIds: [
         'nationality', 'age', 'role', // Human
@@ -207,13 +215,13 @@ const App: React.FC = () => {
       <div className="flex justify-between items-center">
         <span className="text-xs font-mono text-slate-400 uppercase flex items-center gap-2">
           <CodeIcon />
-          {state.taskMode === 'editing' ? '編輯指令 (Instructions)' :
-            state.taskMode === 'video_generation' ? '影片提示詞 (Video Prompt)' :
+          {global.taskMode === 'editing' ? '編輯指令 (Instructions)' :
+            global.taskMode === 'video_generation' ? '影片提示詞 (Video Prompt)' :
               '繪圖提示詞 (Image Prompt)'}
         </span>
         <div className="flex gap-2">
-          {state.subjectType === 'animal' && <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Animal</span>}
-          {state.subjectType === 'vehicle' && <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Vehicle</span>}
+          {activeSubject.subjectType === 'animal' && <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Animal</span>}
+          {activeSubject.subjectType === 'vehicle' && <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Vehicle</span>}
           <button
             onClick={handleClear}
             className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-md transition-colors"
@@ -331,6 +339,47 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* --- SUBJECT TABS --- */}
+        <div className="lg:col-span-12">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900/20 items-center">
+            {state.subjects.map((subj, idx) => (
+              <button
+                key={subj.id}
+                onClick={() => setActiveSubject(subj.id)}
+                className={`
+                            flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-all whitespace-nowrap
+                            ${subj.id === state.activeSubjectId
+                    ? 'bg-slate-800 border-indigo-500 text-white shadow-lg'
+                    : 'bg-slate-900/50 border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}
+                        `}
+              >
+                <UserIcon />
+                <span className="font-medium text-sm">Subject {idx + 1}</span>
+                {state.subjects.length > 1 && (
+                  <div
+                    onClick={(e) => { e.stopPropagation(); removeSubject(subj.id); }}
+                    className="ml-2 p-1 rounded-full hover:bg-red-500/20 hover:text-red-400 text-slate-600 transition-colors"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
+                  </div>
+                )}
+              </button>
+            ))}
+
+            {state.subjects.length < 5 && (
+              <button
+                onClick={addSubject}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-slate-700 text-slate-500 hover:text-indigo-400 hover:border-indigo-500 hover:bg-indigo-500/10 transition-all text-sm font-medium whitespace-nowrap"
+              >
+                + Add Subject
+              </button>
+            )}
+          </div>
+          {/* Visual Divider line related to active tab */}
+          <div className="h-[1px] bg-slate-800 w-full mb-4"></div>
+        </div>
+
+
         {/* Left Column: Task Mode & References */}
         <div className="lg:col-span-3 space-y-6">
           {/* Task Mode Selector */}
@@ -339,7 +388,7 @@ const App: React.FC = () => {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => handleTaskModeSelect('generation')}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${state.taskMode === 'generation' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${global.taskMode === 'generation' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
               >
                 <ImageIcon />
                 <div className="text-left">
@@ -349,7 +398,7 @@ const App: React.FC = () => {
               </button>
               <button
                 onClick={() => handleTaskModeSelect('video_generation')}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${state.taskMode === 'video_generation' ? 'bg-cyan-600/20 border-cyan-500 text-cyan-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${global.taskMode === 'video_generation' ? 'bg-cyan-600/20 border-cyan-500 text-cyan-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
               >
                 <VideoIcon />
                 <div className="text-left">
@@ -359,7 +408,7 @@ const App: React.FC = () => {
               </button>
               <button
                 onClick={() => handleTaskModeSelect('editing')}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${state.taskMode === 'editing' ? 'bg-purple-600/20 border-purple-500 text-purple-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg border transition-all ${global.taskMode === 'editing' ? 'bg-purple-600/20 border-purple-500 text-purple-300' : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'}`}
               >
                 <CodeIcon />
                 <div className="text-left">
@@ -370,7 +419,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <SubjectSelector selected={state.subjectType} onSelect={handleSubjectTypeSelect} />
+          <SubjectSelector selected={activeSubject.subjectType} onSelect={handleSubjectTypeSelect} />
 
           {/* Reference Images (Visible in all modes, crucial for Editing) */}
           <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
@@ -385,43 +434,43 @@ const App: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {state.referenceImages.length === 0 ? (
+              {global.referenceImages.length === 0 ? (
                 <div className="text-center py-4 text-xs text-slate-500 dashed-border rounded-lg border border-dashed border-slate-700">
                   無參考圖片 (選填)
                 </div>
               ) : (
-                state.referenceImages.map(img => (
+                global.referenceImages.map(img => (
                   <ReferenceImageCard
                     key={img.id}
                     image={img}
-                    showIntent={state.taskMode === 'editing'}
+                    showIntent={global.taskMode === 'editing'}
                     onRemove={removeReferenceImage}
                     onUpdate={updateReferenceImage}
                   />
                 ))
               )}
             </div>
-            {state.taskMode === 'generation' && state.referenceImages.length > 0 && (
+            {global.taskMode === 'generation' && global.referenceImages.length > 0 && (
               <p className="text-[10px] text-slate-500 mt-2">
                 * 圖片生成模式下，參考圖主要作為風格或構圖參考 (ControlNet/IP-Adapter)
               </p>
             )}
           </div>
 
-          {/* Gender Selector - Only for Human */}
-          {state.subjectType === 'human' && (
+          {/* Gender Selector - Only for Human - USES activeSubject.gender */}
+          {activeSubject.subjectType === 'human' && (
             <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
               <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">基礎性別 (Base Gender)</h2>
               <div className="flex bg-slate-800 rounded-lg p-1">
                 <button
                   onClick={() => handleGenderSelect('female')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${activeSubject.gender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <FemaleIcon /> 女性
                 </button>
                 <button
                   onClick={() => handleGenderSelect('male')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'male' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${activeSubject.gender === 'male' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <MaleIcon /> 男性
                 </button>
@@ -436,16 +485,16 @@ const App: React.FC = () => {
                 <ShieldIcon /> 負面提示詞
               </h2>
               <div className="relative inline-block w-8 h-4 align-middle select-none transition duration-200 ease-in">
-                <input type="checkbox" name="toggle" id="toggle" checked={state.useNegativePrompt} onChange={toggleUseNegativePrompt} className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer" />
-                <label htmlFor="toggle" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${state.useNegativePrompt ? 'bg-indigo-600' : 'bg-slate-700'}`}></label>
+                <input type="checkbox" name="toggle" id="toggle" checked={global.useNegativePrompt} onChange={toggleUseNegativePrompt} className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer" />
+                <label htmlFor="toggle" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${global.useNegativePrompt ? 'bg-indigo-600' : 'bg-slate-700'}`}></label>
               </div>
             </div>
 
-            {state.useNegativePrompt && (
+            {global.useNegativePrompt && (
               <div className="space-y-2">
                 <textarea
                   className="w-full h-24 bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 resize-none focus:border-indigo-500 focus:outline-none"
-                  value={state.negativePrompt}
+                  value={global.negativePrompt}
                   onChange={(e) => handleNegativeChange(e.target.value)}
                   placeholder="不想出現的內容..."
                 />
@@ -454,7 +503,7 @@ const App: React.FC = () => {
                     <button
                       key={tag}
                       onClick={() => toggleNegativeTag(tag)}
-                      className={`text-[10px] px-2 py-1 rounded border ${state.negativePrompt.includes(tag) ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}
+                      className={`text-[10px] px-2 py-1 rounded border ${global.negativePrompt.includes(tag) ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'}`}
                     >
                       {tag}
                     </button>
@@ -471,9 +520,18 @@ const App: React.FC = () => {
           <div className="grid grid-cols-1 gap-4">
             {/* Render Accordion Groups */}
             {CATEGORY_GROUPS.map((group) => {
-              const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
+              const allowedForSubject = SUBJECT_CATEGORY_CONFIG[activeSubject.subjectType] || [];
               const visibleCategories = group.categoryIds.filter(catId => {
-                if (state.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return false;
+                if (global.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return false;
+
+                // Allow global options (like artStyle, lighting) regardless of subject type config if they are in the group?
+                // SUBJECT_CATEGORY_CONFIG only limits *subject* specific fields (like hairStyle).
+                // Global fields (lighting, etc) should be visible.
+                // However, the current logic relies on allowedForSubject which comes from SUBJECT_CATEGORY_CONFIG.
+                // We should ensure SUBJECT_CATEGORY_CONFIG includes all relevant fields for that mode, OR explicitly allow global fields.
+                // For now, assume SUBJECT_CATEGORY_CONFIG logic is correct but might need tweaking if I moved global fields out of it.
+                // Wait, logic check: SUBJECT_CATEGORY_CONFIG in constants.ts lists ALL allowed categories for a type.
+                // So if 'lighting' is allowed for 'human', it should be in the list.
                 return allowedForSubject.includes(catId);
               });
 
@@ -486,11 +544,11 @@ const App: React.FC = () => {
                       const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
                       if (!cat) return null;
 
-                      // Filter options by gender
-                      let filteredOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
+                      // Filter options by gender (subject specific)
+                      let filteredOptions = cat.options.filter(opt => !opt.gender || !activeSubject.gender || opt.gender === activeSubject.gender);
 
-                      // Filter character-specific options for Scenery mode
-                      if (state.subjectType === 'scenery') {
+                      // Filter character-specific options for Scenery mode (subject specific)
+                      if (activeSubject.subjectType === 'scenery') {
                         if (cat.id === 'mood') {
                           filteredOptions = filteredOptions.filter(opt => !SCENERY_FORBIDDEN_MOODS.includes(opt.value));
                         } else {
@@ -499,11 +557,16 @@ const App: React.FC = () => {
                         }
                       }
 
+                      // DETERMINE VALUE BASED ON SCOPE
+                      // 'scope' property was added to PROMPT_CATEGORIES. Default to 'subject' if missing (backwards compat).
+                      const isGlobal = cat.scope === 'global';
+                      const selectedValue = isGlobal ? (global as any)[catId] : (activeSubject as any)[catId];
+
                       return (
                         <SelectionCard
                           key={cat.id}
                           category={{ ...cat, options: filteredOptions }}
-                          selectedValue={(state as any)[catId]}
+                          selectedValue={selectedValue}
                           onSelect={handleSelect}
                         />
                       );
@@ -541,8 +604,8 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Quality Tags (Quick Access) */}
-            {state.taskMode !== 'editing' && (
+            {/* Quality Tags (Quick Access) - GLOBAL */}
+            {global.taskMode !== 'editing' && (
               <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
                 <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">畫質增強 (Quality Boosters)</h2>
                 <div className="flex flex-wrap gap-2">
@@ -550,7 +613,7 @@ const App: React.FC = () => {
                     <button
                       key={tag.value}
                       onClick={() => toggleQualityTag(tag.value)}
-                      className={`px-2 py-1 text-xs rounded-full border transition-all ${state.quality.includes(tag.value)
+                      className={`px-2 py-1 text-xs rounded-full border transition-all ${global.quality.includes(tag.value)
                         ? 'bg-yellow-500/20 border-yellow-500 text-yellow-300'
                         : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
                         }`}
@@ -562,8 +625,8 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Preservation Tags (Editing Mode Only) */}
-            {state.taskMode === 'editing' && (
+            {/* Preservation Tags (Editing Mode Only) - GLOBAL */}
+            {global.taskMode === 'editing' && (
               <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
                 <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <ShieldIcon />保留特徵 (Preserve)
@@ -574,7 +637,7 @@ const App: React.FC = () => {
                     <button
                       key={opt.value}
                       onClick={() => togglePreservationTag(opt.value)}
-                      className={`px-2 py-1 text-xs rounded-full border transition-all ${state.preservation.includes(opt.value)
+                      className={`px-2 py-1 text-xs rounded-full border transition-all ${global.preservation.includes(opt.value)
                         ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
                         : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-500'
                         }`}

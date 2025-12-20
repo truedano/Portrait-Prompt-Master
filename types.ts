@@ -13,54 +13,61 @@ export interface ReferenceImage {
   intent: EditingIntent;
 }
 
-export interface PortraitState {
-  taskMode: TaskMode;
+export interface SubjectConfig {
+  id: string;
   subjectType: SubjectType;
   gender: Gender;
-  referenceImages: ReferenceImage[];
-  nationality: string;
-  age: string;
-
-  // Multi-selectable fields changed to string[]
+  nationality: string[]; // multi-select
+  age: string[]; // multi-select
+  role: string[]; // multi-select
   bodyType: string[];
-  role: string;
-  faceShape: string;
-  eyeGaze: string;
+  faceShape: string[];
+  eyeGaze: string[];
   hairColor: string[];
   hairStyle: string[];
   appearance: string[];
   clothing: string[];
   clothingDetail: string[];
   accessories: string[];
-
-  action: string;
-  hands: string;
-  composition: string;
-  era: string;
-  environment: string;
-
-  // Multi-selectable fields
-  lighting: string[];
-  colorPalette: string;
-  camera: string;
-  artStyle: string[];
+  action: string[]; // multi-select
+  hands: string[]; // multi-select
   mood: string[];
-
-  aspectRatio: string;
-  cameraMovement: string;
-  motionStrength: string;
-
 
   // Animal / Vehicle Specifics
   animalSpecies: string;
   animalFur: string[];
   vehicleType: string;
   vehicleColor: string;
+}
+
+export interface GlobalConfig {
+  taskMode: TaskMode;
+  composition: string[]; // multi-select
+  era: string; // single select
+  environment: string[]; // multi-select
+
+  // Multi-selectable fields
+  lighting: string[];
+  colorPalette: string;
+  camera: string[]; // multi-select
+  artStyle: string[];
+
+  aspectRatio: string;
+  cameraMovement: string[];
+  motionStrength: string;
 
   quality: string[];
   preservation: string[];
   negativePrompt: string;
   useNegativePrompt: boolean;
+
+  referenceImages: ReferenceImage[];
+}
+
+export interface PortraitState {
+  global: GlobalConfig;
+  subjects: SubjectConfig[];
+  activeSubjectId: string;
 }
 
 export type OutputLanguage = 'en' | 'zh';
@@ -74,7 +81,7 @@ export interface PromptOption {
 }
 
 export interface OptionCategory {
-  id: keyof PortraitState;
+  id: string; // Simplified from keyof PortraitState for multi-subject refactor
   label: string;
   options: PromptOption[];
   multiSelect?: boolean;
