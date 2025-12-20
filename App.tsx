@@ -198,8 +198,8 @@ const App: React.FC = () => {
       id: 'scene',
       title: '動作與場景 (Scene & Action)',
       icon: <MapIcon />,
-      // Add motionStrength to scene group
-      categoryIds: ['action', 'motionStrength', 'hands', 'composition', 'era', 'environment']
+      // Add 'interaction' here. Logic below will ensure it only shows for multiple subjects.
+      categoryIds: ['action', 'interaction', 'motionStrength', 'hands', 'composition', 'era', 'environment']
     },
     {
       id: 'style',
@@ -522,23 +522,21 @@ const App: React.FC = () => {
             {CATEGORY_GROUPS.map((group) => {
               const allowedForSubject = SUBJECT_CATEGORY_CONFIG[activeSubject.subjectType] || [];
               const visibleCategories = group.categoryIds.filter(catId => {
+                // Feature: Only show interaction if subjects > 1
+                if (catId === 'interaction' && state.subjects.length <= 1) return false;
+
                 if (global.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return false;
 
-                // Allow global options (like artStyle, lighting) regardless of subject type config if they are in the group?
-                // SUBJECT_CATEGORY_CONFIG only limits *subject* specific fields (like hairStyle).
-                // Global fields (lighting, etc) should be visible.
-                // However, the current logic relies on allowedForSubject which comes from SUBJECT_CATEGORY_CONFIG.
-                // We should ensure SUBJECT_CATEGORY_CONFIG includes all relevant fields for that mode, OR explicitly allow global fields.
-                // For now, assume SUBJECT_CATEGORY_CONFIG logic is correct but might need tweaking if I moved global fields out of it.
-                // Wait, logic check: SUBJECT_CATEGORY_CONFIG in constants.ts lists ALL allowed categories for a type.
-                // So if 'lighting' is allowed for 'human', it should be in the list.
+                // For interaction (which is global), we can check explicitly or just rely on the fallback.
+                if (catId === 'interaction') return true;
+
                 return allowedForSubject.includes(catId);
               });
 
               if (visibleCategories.length === 0) return null;
 
               return (
-                <Accordion key={group.id} title={group.title} icon={group.icon} defaultOpen={group.id === 'appearance'}>
+                <Accordion key={group.id} title={group.title} icon={group.icon} defaultOpen={group.id === 'appearance' || group.id === 'scene'}>
                   <div className="grid grid-cols-1 gap-4">
                     {visibleCategories.map(catId => {
                       const cat = PROMPT_CATEGORIES.find(c => c.id === catId);

@@ -104,6 +104,30 @@ export const PROMPT_CATEGORIES: (OptionCategory & { scope: 'global' | 'subject' 
     options: VEHICLE_COLOR,
     scope: 'subject'
   },
+
+  // --- INTERACTION (Global) ---
+  {
+    id: 'interaction',
+    label: '互動 (Interaction)',
+    description: '多重主體之間的互動 (2+ Subjects)',
+    scope: 'global',
+    options: [
+      { label: '無互動 (None)', value: '' },
+      { label: '擁抱 (Hugging)', value: 'hugging each other' },
+      { label: '接吻 (Kissing)', value: 'kissing' },
+      { label: '牽手 (Holding Hands)', value: 'holding hands' },
+      { label: '背對背 (Back to Back)', value: 'back to back' },
+      { label: '互相對視 (Looking at Each Other)', value: 'looking at each other' },
+      { label: '交談 (Talking)', value: 'talking to each other' },
+      { label: '打鬥 (Fighting)', value: 'fighting' },
+      { label: '並肩站立 (Standing Together)', value: 'standing next to each other' },
+      { label: '互相依靠 (Leaning on Each Other)', value: 'leaning on each other' },
+      { label: '一起走 (Walking Together)', value: 'walking together' },
+      { label: '跳舞 (Dancing)', value: 'dancing together' },
+      { label: '自拍 (Selfie)', value: 'taking a selfie together' },
+    ]
+  },
+
   // --- HUMAN DEFAULT ---
   {
     id: 'nationality',

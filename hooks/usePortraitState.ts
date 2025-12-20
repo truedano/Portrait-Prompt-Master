@@ -43,7 +43,8 @@ const defaultGlobal: GlobalConfig = {
     preservation: [],
     negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur',
     useNegativePrompt: true,
-    referenceImages: []
+    referenceImages: [],
+    interaction: []
 };
 
 export const usePortraitState = () => {
@@ -379,7 +380,8 @@ export const usePortraitState = () => {
         const globalKeys: (keyof GlobalConfig)[] = [
             'taskMode', 'composition', 'era', 'environment', 'lighting', 'colorPalette',
             'camera', 'artStyle', 'aspectRatio', 'cameraMovement', 'motionStrength',
-            'quality', 'preservation', 'negativePrompt', 'useNegativePrompt', 'referenceImages'
+            'quality', 'preservation', 'negativePrompt', 'useNegativePrompt', 'referenceImages',
+            'interaction'
         ];
 
         globalKeys.forEach(key => {

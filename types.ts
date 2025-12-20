@@ -1,95 +1,92 @@
+export type OutputLanguage = 'en' | 'zh';
+export type OutputFormat = 'text' | 'json' | 'yaml' | 'markdown';
+export type TaskMode = 'generation' | 'video_generation' | 'editing';
 
-export type Gender = 'female' | 'male' | undefined;
+export interface OptionItem {
+  value: string;
+  label: string;
+  gender?: 'male' | 'female'; // Optional gender constraint
+}
+
+export interface OptionCategory {
+  id: string;
+  title: string;
+  options: OptionItem[];
+  scope?: 'global' | 'subject'; // Determine where this value is stored
+}
+
 export type SubjectType = 'human' | 'animal' | 'vehicle' | 'scenery';
 
-export type TaskMode = 'generation' | 'editing' | 'video_generation';
+export type Gender = 'male' | 'female'; // | 'other' in future?
 
-// Replaces Midjourney ReferenceType with Gemini Editing Intents
-export type EditingIntent = 'general' | 'high_denoising' | 'keep_subject' | 'keep_composition';
+export interface SubjectConfig {
+  id: string; // Unique identifier for React keys
+  subjectType: SubjectType;
+  gender?: Gender; // Only for humans
+
+  // Human Attributes
+  nationality: string | string[];
+  age: string | string[];
+  role: string | string[];
+  bodyType: string | string[];
+  faceShape: string | string[];
+  eyeGaze: string | string[];
+  hairColor: string | string[];
+  hairStyle: string | string[];
+  appearance: string | string[];
+  clothing: string | string[];
+  clothingDetail: string | string[];
+  accessories: string | string[];
+  action: string | string[];
+  hands: string | string[];
+  mood: string | string[];
+
+  // Animal Attributes
+  animalSpecies: string;
+  animalFur: string | string[];
+
+  // Vehicle Attributes
+  vehicleType: string;
+  vehicleColor: string | string[];
+}
 
 export interface ReferenceImage {
   id: string;
   url: string;
-  intent: EditingIntent;
-}
-
-export interface SubjectConfig {
-  id: string;
-  subjectType: SubjectType;
-  gender: Gender;
-  nationality: string[]; // multi-select
-  age: string[]; // multi-select
-  role: string[]; // multi-select
-  bodyType: string[];
-  faceShape: string[];
-  eyeGaze: string[];
-  hairColor: string[];
-  hairStyle: string[];
-  appearance: string[];
-  clothing: string[];
-  clothingDetail: string[];
-  accessories: string[];
-  action: string[]; // multi-select
-  hands: string[]; // multi-select
-  mood: string[];
-
-  // Animal / Vehicle Specifics
-  animalSpecies: string;
-  animalFur: string[];
-  vehicleType: string;
-  vehicleColor: string;
+  intent: 'general' | 'structure' | 'style'; // For future extensions (ControlNet)
 }
 
 export interface GlobalConfig {
   taskMode: TaskMode;
-  composition: string[]; // multi-select
-  era: string; // single select
-  environment: string[]; // multi-select
 
-  // Multi-selectable fields
-  lighting: string[];
+  // Scene & Environment
+  composition: string | string[];
+  era: string; // Time period
+  environment: string | string[]; // Background/Location
+
+  // Lighting & Style (Global overrides or base)
+  lighting: string | string[];
   colorPalette: string;
-  camera: string[]; // multi-select
-  artStyle: string[];
+  camera: string | string[];
+  artStyle: string | string[];
 
+  // Technical
   aspectRatio: string;
-  cameraMovement: string[];
-  motionStrength: string;
+  cameraMovement: string | string[]; // For Video
+  motionStrength: string; // For Video
 
-  quality: string[];
-  preservation: string[];
+  quality: string[]; // "Masterpiece", "8k" etc.
+  preservation: string[]; // "Preserve Face" etc. (Inpainting)
   negativePrompt: string;
   useNegativePrompt: boolean;
-
   referenceImages: ReferenceImage[];
+
+  interaction: string | string[]; // New field for multi-subject interaction
 }
 
 export interface PortraitState {
   global: GlobalConfig;
   subjects: SubjectConfig[];
-  activeSubjectId: string;
+
+  activeSubjectId: string; // The ID of the currently selected subject in UI
 }
-
-export type OutputLanguage = 'en' | 'zh';
-export type OutputFormat = 'text' | 'json' | 'yaml' | 'markdown';
-
-export interface PromptOption {
-  label: string;
-  value: string;
-  gender?: Gender;
-  image?: string; // URL for visual selector
-}
-
-export interface OptionCategory {
-  id: string; // Simplified from keyof PortraitState for multi-subject refactor
-  label: string;
-  options: PromptOption[];
-  multiSelect?: boolean;
-  description?: string;
-}
-
-export type GeneratedImage = {
-  url: string;
-  loading: boolean;
-  error: string | null;
-};

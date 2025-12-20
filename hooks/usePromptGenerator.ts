@@ -106,7 +106,8 @@ export const usePromptGenerator = (
             motionStrength: resolveField('motionStrength', rawGlobal.motionStrength, outputLang),
             quality: resolveField('quality', rawGlobal.quality, outputLang),
             preservation: resolveField('preservation', rawGlobal.preservation, outputLang),
-            negative: rawGlobal.useNegativePrompt ? rawGlobal.negativePrompt : ''
+            negative: rawGlobal.useNegativePrompt ? rawGlobal.negativePrompt : '',
+            interaction: resolveField('interaction', rawGlobal.interaction, outputLang)
         };
 
 
@@ -120,9 +121,8 @@ export const usePromptGenerator = (
                     task_mode: rawGlobal.taskMode,
                     engine: rawGlobal.taskMode === 'video_generation' ? "veo/sora" : "gemini_nano_banana_pro"
                 },
-                subjects: state.subjects.map(s => resolveSubject(s)),
                 global: globalFields,
-                negative_prompt: globalFields.negative
+                subjects: state.subjects.map(s => resolveSubject(s)),
             };
 
             if (outputFormat === 'json') {
@@ -172,7 +172,6 @@ export const usePromptGenerator = (
                 ].filter(Boolean);
 
                 const sep = outputLang === 'en' ? ', ' : '，';
-                // Remove debug labels, just return content
                 return detailParts.join(sep);
             });
 
@@ -181,13 +180,17 @@ export const usePromptGenerator = (
 
             // Construct Full Prompt
             const baseParts = [
-                // 1. Camera Movement (Video)
+                // 1. Interaction (Top Priority for Multi-Subject)
+                // If subjects > 1, prepend interaction
+                state.subjects.length > 1 ? globalFields.interaction : null,
+
+                // 2. Camera Movement (Video)
                 rawGlobal.taskMode === 'video_generation' ? globalFields.cameraMovement : null,
 
-                // 2. Subjects
+                // 3. Subjects
                 subjectsJoined,
 
-                // 3. Global Context
+                // 4. Global Context
                 globalFields.environment,
                 rawGlobal.taskMode === 'video_generation' ? globalFields.motionStrength : null,
                 globalFields.composition,
