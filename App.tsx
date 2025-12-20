@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS, SUBJECT_CATEGORY_CONFIG, SCENERY_FORBIDDEN_MOODS } from './constants';
+import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS, SUBJECT_CATEGORY_CONFIG, SCENERY_FORBIDDEN_MOODS, APP_TITLE, APP_NAME } from './constants';
 import { PortraitState, OutputLanguage, OutputFormat, ReferenceImage, TaskMode } from './types';
 import { SelectionCard } from './components/SelectionCard';
 import { SubjectSelector } from './components/SubjectSelector';
@@ -280,9 +280,9 @@ const App: React.FC = () => {
         <div className="lg:col-span-12 mb-4 lg:mb-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              圖像提示詞大師
+              {APP_TITLE}
             </h1>
-            <p className="text-slate-400 text-sm mt-1">Image Prompt Master v2.1</p>
+            <p className="text-slate-400 text-sm mt-1">{APP_NAME} v{process.env.APP_VERSION}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button

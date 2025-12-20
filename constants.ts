@@ -640,3 +640,6 @@ export const SCENERY_FORBIDDEN_MOODS = [
   'happy, smiling', 'sad, crying', 'angry', 'seductive',
   'confident', 'shy, blushing', 'surprised'
 ];
+
+export const APP_TITLE = '圖像提示詞大師';
+export const APP_NAME = 'Image Prompt Master';
