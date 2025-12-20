@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS } from './constants';
+import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS, SUBJECT_CATEGORY_CONFIG } from './constants';
 import { PortraitState, OutputLanguage, OutputFormat, ReferenceImage, TaskMode } from './types';
 import { SelectionCard } from './components/SelectionCard';
+import { SubjectSelector } from './components/SubjectSelector';
 import { ReferenceImageCard } from './components/ReferenceImageCard';
 import { Accordion } from './components/Accordion';
 import { HistoryPanel } from './components/HistoryPanel';
@@ -15,6 +16,7 @@ const App: React.FC = () => {
     state,
     setState,
     handleSelect,
+    handleSubjectTypeSelect,
     handleGenderSelect,
     handleTaskModeSelect,
     toggleQualityTag,
@@ -170,9 +172,13 @@ const App: React.FC = () => {
   const CATEGORY_GROUPS = [
     {
       id: 'character',
-      title: '人物設定 (Character Profile)',
+      title: '主體特徵 (Subject Details)',
       icon: <UserIcon />,
-      categoryIds: ['nationality', 'age', 'role']
+      categoryIds: [
+        'nationality', 'age', 'role', // Human
+        'animalSpecies', 'animalFur', // Animal
+        'vehicleType', 'vehicleColor' // Vehicle
+      ]
     },
     {
       id: 'appearance',
@@ -205,13 +211,17 @@ const App: React.FC = () => {
             state.taskMode === 'video_generation' ? '影片提示詞 (Video Prompt)' :
               '繪圖提示詞 (Image Prompt)'}
         </span>
-        <button
-          onClick={handleClear}
-          className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-md transition-colors"
-          title="清空所有選項"
-        >
-          <TrashIcon />
-        </button>
+        <div className="flex gap-2">
+          {state.subjectType === 'animal' && <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Animal</span>}
+          {state.subjectType === 'vehicle' && <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Vehicle</span>}
+          <button
+            onClick={handleClear}
+            className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-md transition-colors"
+            title="清空所有選項"
+          >
+            <TrashIcon />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -270,9 +280,9 @@ const App: React.FC = () => {
         <div className="lg:col-span-12 mb-4 lg:mb-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              人像提示詞大師
+              圖像提示詞大師
             </h1>
-            <p className="text-slate-400 text-sm mt-1">Portrait Prompt Master v2.1</p>
+            <p className="text-slate-400 text-sm mt-1">Image Prompt Master v2.1</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -360,6 +370,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
+          <SubjectSelector selected={state.subjectType} onSelect={handleSubjectTypeSelect} />
+
           {/* Reference Images (Visible in all modes, crucial for Editing) */}
           <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
             <div className="flex justify-between items-center mb-3">
@@ -396,24 +408,26 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* Gender Selector */}
-          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">基礎性別 (Base Gender)</h2>
-            <div className="flex bg-slate-800 rounded-lg p-1">
-              <button
-                onClick={() => handleGenderSelect('female')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <FemaleIcon /> 女性
-              </button>
-              <button
-                onClick={() => handleGenderSelect('male')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'male' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                <MaleIcon /> 男性
-              </button>
+          {/* Gender Selector - Only for Human */}
+          {state.subjectType === 'human' && (
+            <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">基礎性別 (Base Gender)</h2>
+              <div className="flex bg-slate-800 rounded-lg p-1">
+                <button
+                  onClick={() => handleGenderSelect('female')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'female' ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <FemaleIcon /> 女性
+                </button>
+                <button
+                  onClick={() => handleGenderSelect('male')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm font-medium ${state.gender === 'male' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <MaleIcon /> 男性
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Negative Prompt - Collapsible or Mini */}
           <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
@@ -465,6 +479,11 @@ const App: React.FC = () => {
                     // Actually video needs aspect ratio. 
                     // Camera Movement & Motion Strength ONLY for Video
                     if (state.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return null;
+
+
+                    // Filter Logic: Check if category is allowed for current SubjectType
+                    const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
+                    if (!allowedForSubject.includes(catId)) return null;
 
                     const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
                     if (!cat) return null;

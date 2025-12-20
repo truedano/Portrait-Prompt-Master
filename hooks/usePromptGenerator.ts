@@ -57,15 +57,28 @@ export const usePromptGenerator = (
 
         // Localized fields for output
         const fields = {
+            subjectType: state.subjectType,
             quality: resolveField('quality', state.quality, outputLang),
             preservation: resolveField('preservation', state.preservation, outputLang),
+            // Human
             nationality: resolveField('nationality', state.nationality, outputLang),
             age: resolveField('age', state.age, outputLang),
-            bodyType: resolveField('bodyType', state.bodyType, outputLang),
             gender: outputLang === 'en' ? genderTermEn : genderTermZh,
             role: resolveField('role', state.role, outputLang),
+            bodyType: resolveField('bodyType', state.bodyType, outputLang),
             faceShape: resolveField('faceShape', state.faceShape, outputLang),
+
+            // Animal (New)
+            animalSpecies: resolveField('animalSpecies', state.animalSpecies, outputLang),
+            animalFur: resolveField('animalFur', state.animalFur, outputLang),
+
+            // Vehicle (New)
+            vehicleType: resolveField('vehicleType', state.vehicleType, outputLang),
+            vehicleColor: resolveField('vehicleColor', state.vehicleColor, outputLang),
+
+            // Common
             eyeGaze: resolveField('eyeGaze', state.eyeGaze, outputLang),
+
             hairColor: resolveField('hairColor', state.hairColor, outputLang),
             hairStyle: resolveField('hairStyle', state.hairStyle, outputLang),
             appearance: resolveField('appearance', state.appearance, outputLang),
@@ -174,9 +187,22 @@ export const usePromptGenerator = (
         else {
             // A. VIDEO GENERATION MODE
             if (state.taskMode === 'video_generation') {
-                const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
-                const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
-                const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+                let mainSubject = '';
+
+                // SUBJECT CONSTRUCTION
+                if (state.subjectType === 'human') {
+                    const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
+                    const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
+                    mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+                } else if (state.subjectType === 'animal') {
+                    // [Fur] [Species]
+                    const subj = [fields.animalFur, fields.animalSpecies].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一隻${subj}`;
+                } else if (state.subjectType === 'vehicle') {
+                    // [Color] [Type]
+                    const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
+                }
 
                 // Video Structure: [Camera Move] + [Subject] + [Action/Motion] + [Environment] + [Style/Quality]
                 const parts = [
@@ -215,9 +241,22 @@ export const usePromptGenerator = (
             }
             // B. IMAGE GENERATION MODE (Descriptive)
             else if (state.taskMode === 'generation') {
-                const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
-                const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
-                const mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+                let mainSubject = '';
+
+                // SUBJECT CONSTRUCTION
+                if (state.subjectType === 'human') {
+                    const subjectEn = [state.nationality, state.age, genderTermEn, state.role].filter(Boolean).join(' ');
+                    const subjectZh = [fields.nationality, fields.age, genderTermZh, fields.role].filter(Boolean).join('');
+                    mainSubject = outputLang === 'en' ? `A ${subjectEn}` : `一個${subjectZh}`;
+                } else if (state.subjectType === 'animal') {
+                    // [Fur] [Species]
+                    const subj = [fields.animalFur, fields.animalSpecies].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一隻${subj}`;
+                } else if (state.subjectType === 'vehicle') {
+                    // [Color] [Type]
+                    const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
+                    mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
+                }
 
                 // ORDER OPTIMIZATION FOR GEMINI / NANO BANANA PRO
                 const parts = [
@@ -315,6 +354,23 @@ export const usePromptGenerator = (
                         instructions.push(outputLang === 'en'
                             ? `Change the character's appearance to be ${desc}.`
                             : `將角色外觀改為${desc}。`);
+                    }
+                }
+
+                // Change Subject Details (Subject Type Specific)
+                if (state.subjectType === 'animal') {
+                    const animalDetails = [fields.animalFur, fields.animalSpecies, fields.appearance].filter(Boolean).join(' ');
+                    if (animalDetails) {
+                        instructions.push(outputLang === 'en'
+                            ? `Change the subject to a ${animalDetails}.`
+                            : `將主體改為${animalDetails}。`);
+                    }
+                } else if (state.subjectType === 'vehicle') {
+                    const vehicleDetails = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(' ');
+                    if (vehicleDetails) {
+                        instructions.push(outputLang === 'en'
+                            ? `Change the vehicle to a ${vehicleDetails}.`
+                            : `將車輛改為${vehicleDetails}。`);
                     }
                 }
 

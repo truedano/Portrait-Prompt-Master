@@ -1,5 +1,6 @@
 
 export type Gender = 'female' | 'male' | undefined;
+export type SubjectType = 'human' | 'animal' | 'vehicle' | 'object';
 
 export type TaskMode = 'generation' | 'editing' | 'video_generation';
 
@@ -14,6 +15,7 @@ export interface ReferenceImage {
 
 export interface PortraitState {
   taskMode: TaskMode;
+  subjectType: SubjectType;
   gender: Gender;
   referenceImages: ReferenceImage[];
   nationality: string;
@@ -47,6 +49,13 @@ export interface PortraitState {
   aspectRatio: string;
   cameraMovement: string;
   motionStrength: string;
+
+
+  // Animal / Vehicle Specifics
+  animalSpecies: string;
+  animalFur: string[];
+  vehicleType: string;
+  vehicleColor: string;
 
   quality: string[];
   preservation: string[];

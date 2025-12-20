@@ -17,7 +17,90 @@ export const NATIONALITIES: PromptOption[] = [
   { label: '巴西 (Brazil)', value: 'Brazilian' }
 ];
 
+export const SUBJECT_TYPES: PromptOption[] = [
+  { label: '人類 (Human)', value: 'human' },
+  { label: '動物 (Animal)', value: 'animal' },
+  { label: '車輛 (Vehicle)', value: 'vehicle' }
+];
+
+export const ANIMAL_SPECIES: PromptOption[] = [
+  { label: '貓 (Cat)', value: 'cat' },
+  { label: '狗 (Dog)', value: 'dog' },
+  { label: '獅子 (Lion)', value: 'lion' },
+  { label: '老虎 (Tiger)', value: 'tiger' },
+  { label: '鷹 (Eagle)', value: 'eagle' },
+  { label: '龍 (Dragon)', value: 'dragon' },
+  { label: '狼 (Wolf)', value: 'wolf' },
+  { label: '狐狸 (Fox)', value: 'fox' },
+  { label: '熊 (Bear)', value: 'bear' },
+  { label: '兔子 (Rabbit)', value: 'rabbit' },
+];
+
+export const ANIMAL_FUR: PromptOption[] = [
+  { label: '白色 (White)', value: 'white fur' },
+  { label: '黑色 (Black)', value: 'black fur' },
+  { label: '橘色 (Orange)', value: 'orange fur' },
+  { label: '三花 (Calico)', value: 'calico fur' },
+  { label: '虎斑 (Tabby)', value: 'tabby fur' },
+  { label: '金色 (Golden)', value: 'golden fur' },
+  { label: '蓬鬆 (Fluffy)', value: 'fluffy fur' },
+  { label: '鱗片 (Scales)', value: 'scales' },
+  { label: '羽毛 (Feathers)', value: 'feathers' },
+];
+
+export const VEHICLE_TYPES: PromptOption[] = [
+  { label: '跑車 (Sports Car)', value: 'sports car' },
+  { label: '轎車 (Sedan)', value: 'sedan' },
+  { label: '休旅車 (SUV)', value: 'SUV' },
+  { label: '卡車 (Truck)', value: 'truck' },
+  { label: '重機 (Motorcycle)', value: 'motorcycle' },
+  { label: '賽車 (Race Car)', value: 'race car' },
+  { label: '太空船 (Spaceship)', value: 'spaceship' },
+  { label: '飛機 (Airplane)', value: 'airplane' },
+  { label: '直升機 (Helicopter)', value: 'helicopter' },
+  { label: '機甲 (Mecha)', value: 'mecha robot' },
+];
+
+export const VEHICLE_COLOR: PromptOption[] = [
+  { label: '金屬紅 (Metallic Red)', value: 'metallic red paint' },
+  { label: '消光黑 (Matte Black)', value: 'matte black finish' },
+  { label: '珍珠白 (Pearl White)', value: 'pearl white paint' },
+  { label: '賽車銀 (Silver)', value: 'silver metallic' },
+  { label: '賽博龐克藍 (Cyber Blue)', value: 'cyberpunk blue neon' },
+  { label: '黃色 (Yellow)', value: 'bright yellow' },
+  { label: '軍綠 (Army Green)', value: 'military green' },
+  { label: '生鏽 (Rusted)', value: 'rusted metal texture' },
+];
+
 export const PROMPT_CATEGORIES: OptionCategory[] = [
+  // --- ANIMAL SPECIFIC ---
+  {
+    id: 'animalSpecies',
+    label: '物種 (Species)',
+    description: '動物種類',
+    options: ANIMAL_SPECIES
+  },
+  {
+    id: 'animalFur',
+    label: '毛色/特徵 (Fur)',
+    description: '動物的毛色與質感',
+    multiSelect: true,
+    options: ANIMAL_FUR
+  },
+  // --- VEHICLE SPECIFIC ---
+  {
+    id: 'vehicleType',
+    label: '車型 (Vehicle Type)',
+    description: '交通工具種類',
+    options: VEHICLE_TYPES
+  },
+  {
+    id: 'vehicleColor',
+    label: '烤漆顏色 (Paint)',
+    description: '車輛外觀顏色',
+    options: VEHICLE_COLOR
+  },
+  // --- HUMAN DEFAULT ---
   {
     id: 'nationality',
     label: '國籍/人種 (Nationality)',
@@ -528,3 +611,23 @@ export const COMMON_NEGATIVE_PROMPTS = [
   'username',
   'artist name'
 ];
+
+export const SUBJECT_CATEGORY_CONFIG: Record<string, string[]> = {
+  human: [
+    'nationality', 'age', 'bodyType', 'role', 'faceShape', 'eyeGaze', 'hairColor', 'hairStyle',
+    'appearance', 'clothing', 'clothingDetail', 'accessories', 'action', 'hands',
+    'composition', 'environment', 'lighting', 'era', 'colorPalette', 'artStyle', 'mood', 'camera', 'aspectRatio',
+    'cameraMovement', 'motionStrength'
+  ],
+  animal: [
+    'animalSpecies', 'animalFur',
+    'appearance', 'clothing', 'accessories',
+    'action', 'environment', 'lighting', 'composition', 'era', 'colorPalette', 'artStyle', 'mood', 'camera', 'aspectRatio',
+    'cameraMovement', 'motionStrength'
+  ],
+  vehicle: [
+    'vehicleType', 'vehicleColor',
+    'environment', 'lighting', 'composition', 'era', 'colorPalette', 'artStyle', 'camera', 'aspectRatio',
+    'cameraMovement', 'motionStrength'
+  ]
+};

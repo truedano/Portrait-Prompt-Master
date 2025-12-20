@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { PortraitState, Gender, ReferenceImage, TaskMode } from '../types';
-import { PROMPT_CATEGORIES } from '../constants';
+import { PortraitState, Gender, ReferenceImage, TaskMode, SubjectType } from '../types';
+import { PROMPT_CATEGORIES, SUBJECT_CATEGORY_CONFIG } from '../constants';
 
 export const usePortraitState = () => {
     const [state, setState] = useState<PortraitState>({
         taskMode: 'generation', // Default mode
+        subjectType: 'human',
         gender: 'female',
         referenceImages: [],
         nationality: '',
@@ -32,6 +33,12 @@ export const usePortraitState = () => {
         aspectRatio: '',
         cameraMovement: '',
         motionStrength: '',
+
+        animalSpecies: '',
+        animalFur: [],
+        vehicleType: '',
+        vehicleColor: '',
+
         quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
         preservation: [],
         negativePrompt: 'nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blur',
@@ -61,6 +68,59 @@ export const usePortraitState = () => {
                 if (!isToggle) return { ...prev, [category]: value };
                 return { ...prev, [category]: currentVal === value ? '' : value };
             }
+        });
+    };
+
+    const handleSubjectTypeSelect = (type: SubjectType) => {
+        setState(prev => {
+            if (prev.subjectType === type) return prev; // No change
+
+            // Smart Clear: Keep only fields valid for the new SubjectType
+            const allowedCategories = SUBJECT_CATEGORY_CONFIG[type] || [];
+
+            // Core fields to always keep
+            const preservedKeys = [
+                'taskMode', 'subjectType', 'gender', 'referenceImages',
+                'quality', 'preservation', 'negativePrompt', 'useNegativePrompt'
+            ];
+
+            // 1. Start with copying preserved keys
+            const newState: any = {};
+            preservedKeys.forEach(key => {
+                newState[key] = (prev as any)[key];
+            });
+
+            // 2. Set new subject type
+            newState.subjectType = type;
+
+            // 3. For every category in PROMPT_CATEGORIES, check if allowed
+            PROMPT_CATEGORIES.forEach(cat => {
+                // If this category is allowed in the NEW subject type, copy old value
+                if (allowedCategories.includes(cat.id)) {
+                    newState[cat.id] = (prev as any)[cat.id];
+                } else {
+                    // Otherwise reset to default
+                    if (cat.multiSelect) {
+                        newState[cat.id] = [];
+                    } else {
+                        newState[cat.id] = '';
+                    }
+                }
+            });
+
+            // Specially handle Gender: if switching to non-human, maybe we should clear gender?
+            // Current design: Human keeps gender. Animal/Vehicle ignores it visually but maybe we clear it for cleaner state.
+            // Let's clear gender if not human to avoid "Female Car" unless user wants that.
+            if (type !== 'human') {
+                newState.gender = undefined;
+            } else {
+                // If switching back to human, maybe default to female? Or keep undefined?
+                // Let's keep undefined to force user to choose or stay neutral.
+                // But previous behavior was defaults to female. Let's revert to default female if undefined?
+                // Let's just keep it undefined to be safe.
+            }
+
+            return newState as PortraitState;
         });
     };
 
@@ -145,6 +205,10 @@ export const usePortraitState = () => {
             if (state.taskMode === 'video_generation' && cat.id === 'aspectRatio') return;
             if (state.taskMode !== 'video_generation' && (cat.id === 'cameraMovement' || cat.id === 'motionStrength')) return;
 
+            // Check if category is allowed for current subject type
+            const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
+            if (!allowedForSubject.includes(cat.id)) return;
+
             // Filter options by gender (if no gender selected, allow all)
             let validOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
 
@@ -179,6 +243,7 @@ export const usePortraitState = () => {
             accessories: [], action: '', hands: '', composition: '', era: '', environment: '',
             lighting: [], colorPalette: '', camera: '', artStyle: [], mood: [], aspectRatio: '',
             cameraMovement: '', motionStrength: '',
+            animalSpecies: '', animalFur: [], vehicleType: '', vehicleColor: '',
             quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
             preservation: [],
             negativePrompt: '',
@@ -209,6 +274,7 @@ export const usePortraitState = () => {
         state,
         setState,
         handleSelect,
+        handleSubjectTypeSelect,
         handleGenderSelect,
         handleTaskModeSelect,
         toggleQualityTag,

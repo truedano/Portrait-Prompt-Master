@@ -46,12 +46,21 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {items.map(item => {
                     // Generate a quick summary label if not present
-                    const summary = [
-                        item.state.nationality,
-                        item.state.gender === 'female' ? '女性' : '男性',
-                        item.state.role,
-                        item.state.artStyle[0]
-                    ].filter(Boolean).join(', ') || '未命名設定';
+                    let summary = '';
+                    if (item.state.subjectType === 'animal') {
+                        summary = [item.state.animalFur, item.state.animalSpecies, item.state.artStyle?.[0]].filter(Boolean).join(', ');
+                    } else if (item.state.subjectType === 'vehicle') {
+                        summary = [item.state.vehicleColor, item.state.vehicleType, item.state.artStyle?.[0]].filter(Boolean).join(', ');
+                    } else {
+                        // Default Human (or old records where subjectType is undefined => Human)
+                        summary = [
+                            item.state.nationality,
+                            item.state.gender === 'female' ? '女性' : (item.state.gender === 'male' ? '男性' : ''),
+                            item.state.role,
+                            item.state.artStyle?.[0]
+                        ].filter(Boolean).join(', ');
+                    }
+                    if (!summary) summary = '未命名設定';
 
                     return (
                         <div key={item.id} className="glass-card hover:bg-slate-800/60 p-3 rounded-lg flex items-center justify-between group transition-all">
