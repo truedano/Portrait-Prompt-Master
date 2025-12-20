@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS, SUBJECT_CATEGORY_CONFIG } from './constants';
+import { PROMPT_CATEGORIES, QUALITY_TAGS, COMMON_NEGATIVE_PROMPTS, PRESERVATION_OPTIONS, SUBJECT_CATEGORY_CONFIG, SCENERY_FORBIDDEN_MOODS } from './constants';
 import { PortraitState, OutputLanguage, OutputFormat, ReferenceImage, TaskMode } from './types';
 import { SelectionCard } from './components/SelectionCard';
 import { SubjectSelector } from './components/SubjectSelector';
@@ -470,39 +470,48 @@ const App: React.FC = () => {
         <div className="lg:col-span-6 space-y-6">
           <div className="grid grid-cols-1 gap-4">
             {/* Render Accordion Groups */}
-            {CATEGORY_GROUPS.map((group) => (
-              <Accordion key={group.id} title={group.title} icon={group.icon} defaultOpen={group.id === 'appearance'}>
-                <div className="grid grid-cols-1 gap-4">
-                  {group.categoryIds.map(catId => {
-                    // Filter logic: Check if category should be shown based on Mode
-                    if (state.taskMode === 'video_generation' && catId === 'aspectRatio') return null; // Ratio handled differently in video sometimes, but usually useful. Let's keep it unless specific logic.
-                    // Actually video needs aspect ratio. 
-                    // Camera Movement & Motion Strength ONLY for Video
-                    if (state.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return null;
+            {CATEGORY_GROUPS.map((group) => {
+              const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
+              const visibleCategories = group.categoryIds.filter(catId => {
+                if (state.taskMode !== 'video_generation' && (catId === 'cameraMovement' || catId === 'motionStrength')) return false;
+                return allowedForSubject.includes(catId);
+              });
 
+              if (visibleCategories.length === 0) return null;
 
-                    // Filter Logic: Check if category is allowed for current SubjectType
-                    const allowedForSubject = SUBJECT_CATEGORY_CONFIG[state.subjectType] || [];
-                    if (!allowedForSubject.includes(catId)) return null;
+              return (
+                <Accordion key={group.id} title={group.title} icon={group.icon} defaultOpen={group.id === 'appearance'}>
+                  <div className="grid grid-cols-1 gap-4">
+                    {visibleCategories.map(catId => {
+                      const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
+                      if (!cat) return null;
 
-                    const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
-                    if (!cat) return null;
+                      // Filter options by gender
+                      let filteredOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
 
-                    // Filter options by gender
-                    const filteredOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
+                      // Filter character-specific options for Scenery mode
+                      if (state.subjectType === 'scenery') {
+                        if (cat.id === 'mood') {
+                          filteredOptions = filteredOptions.filter(opt => !SCENERY_FORBIDDEN_MOODS.includes(opt.value));
+                        } else {
+                          const forbiddenSceneryOptions = ['close-up portrait', 'medium shot, upper body', 'full body shot', 'selfie angle', '85mm lens'];
+                          filteredOptions = filteredOptions.filter(opt => !forbiddenSceneryOptions.includes(opt.value));
+                        }
+                      }
 
-                    return (
-                      <SelectionCard
-                        key={cat.id}
-                        category={{ ...cat, options: filteredOptions }}
-                        selectedValue={(state as any)[catId]}
-                        onSelect={handleSelect}
-                      />
-                    );
-                  })}
-                </div>
-              </Accordion>
-            ))}
+                      return (
+                        <SelectionCard
+                          key={cat.id}
+                          category={{ ...cat, options: filteredOptions }}
+                          selectedValue={(state as any)[catId]}
+                          onSelect={handleSelect}
+                        />
+                      );
+                    })}
+                  </div>
+                </Accordion>
+              );
+            })}
           </div>
         </div>
 

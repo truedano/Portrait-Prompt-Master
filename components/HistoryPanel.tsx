@@ -51,6 +51,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                         summary = [item.state.animalFur, item.state.animalSpecies, item.state.artStyle?.[0]].filter(Boolean).join(', ');
                     } else if (item.state.subjectType === 'vehicle') {
                         summary = [item.state.vehicleColor, item.state.vehicleType, item.state.artStyle?.[0]].filter(Boolean).join(', ');
+                    } else if (item.state.subjectType === 'scenery') {
+                        summary = [item.state.environment, item.state.artStyle?.[0]].filter(Boolean).join(', ');
                     } else {
                         // Default Human (or old records where subjectType is undefined => Human)
                         summary = [

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PortraitState, OutputLanguage, OutputFormat } from '../types';
-import { PROMPT_CATEGORIES, QUALITY_TAGS, PRESERVATION_OPTIONS } from '../constants';
+import { PROMPT_CATEGORIES, QUALITY_TAGS, PRESERVATION_OPTIONS, SCENERY_FORBIDDEN_MOODS } from '../constants';
 
 export const usePromptGenerator = (
     state: PortraitState,
@@ -100,6 +100,19 @@ export const usePromptGenerator = (
             motionStrength: resolveField('motionStrength', state.motionStrength, outputLang),
             negative: state.useNegativePrompt ? state.negativePrompt : ''
         };
+
+        // --- FILTER HUMAN-CENTRIC TERMS FROM NON-HUMAN MODES ---
+        // We do this by re-resolving these specific fields with filtered state values
+        if (state.subjectType !== 'human') {
+            const forbiddenQuality = ['detailed face'];
+            const filteredQuality = state.quality.filter(q => !forbiddenQuality.includes(q.toLowerCase()));
+            fields.quality = resolveField('quality', filteredQuality, outputLang);
+        }
+
+        if (state.subjectType === 'scenery') {
+            const filteredMood = state.mood.filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
+            fields.mood = resolveField('mood', filteredMood, outputLang);
+        }
 
         let result = '';
 
@@ -202,6 +215,10 @@ export const usePromptGenerator = (
                     // [Color] [Type]
                     const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
                     mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
+                } else if (state.subjectType === 'scenery') {
+                    // For scenery, we don't necessarily need a "A [Subject]" prefix if it feels repetitive.
+                    // But to keep consistency with the "mainSubject" slot:
+                    mainSubject = outputLang === 'en' ? fields.environment : fields.environment;
                 }
 
                 // Video Structure: [Camera Move] + [Subject] + [Action/Motion] + [Environment] + [Style/Quality]
@@ -256,6 +273,16 @@ export const usePromptGenerator = (
                     // [Color] [Type]
                     const subj = [fields.vehicleColor, fields.vehicleType].filter(Boolean).join(outputLang === 'en' ? ' ' : '');
                     mainSubject = outputLang === 'en' ? `A ${subj}` : `一輛${subj}`;
+                } else if (state.subjectType === 'scenery') {
+                    // Logic for generating a descriptive "Subject" for scenery
+                    // e.g., "A cinematic photography of majestic mountains"
+                    const style = [fields.artStyle].filter(Boolean).join('');
+                    const env = fields.environment || (outputLang === 'en' ? 'landscape' : '風景');
+                    if (outputLang === 'en') {
+                        mainSubject = style ? `A ${style} of ${env}` : `A photography of ${env}`;
+                    } else {
+                        mainSubject = style ? `一張${style}風格的${env}` : `一張${env}攝影`;
+                    }
                 }
 
                 // ORDER OPTIMIZATION FOR GEMINI / NANO BANANA PRO
@@ -371,6 +398,12 @@ export const usePromptGenerator = (
                         instructions.push(outputLang === 'en'
                             ? `Change the vehicle to a ${vehicleDetails}.`
                             : `將車輛改為${vehicleDetails}。`);
+                    }
+                } else if (state.subjectType === 'scenery') {
+                    if (fields.environment) {
+                        instructions.push(outputLang === 'en'
+                            ? `Change the landscape to ${fields.environment}.`
+                            : `將風景改為${fields.environment}。`);
                     }
                 }
 

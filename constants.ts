@@ -388,7 +388,7 @@ export const PROMPT_CATEGORIES: OptionCategory[] = [
       { label: '置中構圖', value: 'symmetrical composition' },
       { label: '景深 (背景模糊)', value: 'depth of field, blurred background' },
       { label: '魚眼', value: 'fisheye lens effect' },
-      { label: 'GoPro', value: 'GoPro wide view' }
+      { label: 'GoPro', value: 'wide-angle action camera footage style' }
     ]
   },
   // New: Camera Movement for Video
@@ -629,5 +629,14 @@ export const SUBJECT_CATEGORY_CONFIG: Record<string, string[]> = {
     'vehicleType', 'vehicleColor',
     'environment', 'lighting', 'composition', 'era', 'colorPalette', 'artStyle', 'camera', 'aspectRatio',
     'cameraMovement', 'motionStrength'
+  ],
+  scenery: [
+    'environment', 'lighting', 'composition', 'era', 'colorPalette', 'artStyle', 'mood', 'camera', 'aspectRatio',
+    'cameraMovement', 'motionStrength'
   ]
 };
+
+export const SCENERY_FORBIDDEN_MOODS = [
+  'happy, smiling', 'sad, crying', 'angry', 'seductive',
+  'confident', 'shy, blushing', 'surprised'
+];

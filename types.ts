@@ -1,6 +1,6 @@
 
 export type Gender = 'female' | 'male' | undefined;
-export type SubjectType = 'human' | 'animal' | 'vehicle' | 'object';
+export type SubjectType = 'human' | 'animal' | 'vehicle' | 'scenery';
 
 export type TaskMode = 'generation' | 'editing' | 'video_generation';
 

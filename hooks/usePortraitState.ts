@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PortraitState, Gender, ReferenceImage, TaskMode, SubjectType } from '../types';
-import { PROMPT_CATEGORIES, SUBJECT_CATEGORY_CONFIG } from '../constants';
+import { PROMPT_CATEGORIES, SUBJECT_CATEGORY_CONFIG, SCENERY_FORBIDDEN_MOODS } from '../constants';
 
 export const usePortraitState = () => {
     const [state, setState] = useState<PortraitState>({
@@ -113,11 +113,16 @@ export const usePortraitState = () => {
             // Let's clear gender if not human to avoid "Female Car" unless user wants that.
             if (type !== 'human') {
                 newState.gender = undefined;
+                newState.quality = (prev.quality || []).filter(q => q !== 'detailed face');
+                // Also clean up forbidden moods if switching to scenery
+                if (type === 'scenery') {
+                    newState.mood = (prev.mood || []).filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
+                }
             } else {
-                // If switching back to human, maybe default to female? Or keep undefined?
-                // Let's keep undefined to force user to choose or stay neutral.
-                // But previous behavior was defaults to female. Let's revert to default female if undefined?
-                // Let's just keep it undefined to be safe.
+                // If switching back to human, auto-add 'detailed face' for best results
+                if (!newState.quality.includes('detailed face')) {
+                    newState.quality = [...newState.quality, 'detailed face'];
+                }
             }
 
             return newState as PortraitState;
@@ -212,6 +217,16 @@ export const usePortraitState = () => {
             // Filter options by gender (if no gender selected, allow all)
             let validOptions = cat.options.filter(opt => !opt.gender || !state.gender || opt.gender === state.gender);
 
+            // Filter character-specific options for Scenery mode
+            if (state.subjectType === 'scenery') {
+                if (cat.id === 'mood') {
+                    validOptions = validOptions.filter(opt => !SCENERY_FORBIDDEN_MOODS.includes(opt.value));
+                } else {
+                    const forbiddenSceneryOptions = ['close-up portrait', 'medium shot, upper body', 'full body shot', 'selfie angle', '85mm lens'];
+                    validOptions = validOptions.filter(opt => !forbiddenSceneryOptions.includes(opt.value));
+                }
+            }
+
             // If a theme is selected, filter options further by keywords
             if (theme && keywords.length > 0) {
                 const themedOptions = validOptions.filter(opt =>
@@ -244,7 +259,9 @@ export const usePortraitState = () => {
             lighting: [], colorPalette: '', camera: '', artStyle: [], mood: [], aspectRatio: '',
             cameraMovement: '', motionStrength: '',
             animalSpecies: '', animalFur: [], vehicleType: '', vehicleColor: '',
-            quality: ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face'],
+            quality: prev.subjectType === 'human'
+                ? ['masterpiece', 'best quality', '8k', 'highly detailed', 'detailed face']
+                : ['masterpiece', 'best quality', '8k', 'highly detailed'],
             preservation: [],
             negativePrompt: '',
             useNegativePrompt: true,
