@@ -60,11 +60,20 @@ export const usePortraitState = () => {
     const addSubject = () => {
         const newId = `subject-${Date.now()}`;
         const newSubject = createDefaultSubject(newId);
-        setState(prev => ({
-            ...prev,
-            subjects: [...prev.subjects, newSubject],
-            activeSubjectId: newId
-        }));
+        setState(prev => {
+            const newSubjects = [...prev.subjects, newSubject];
+            const newGlobal = { ...prev.global };
+            // Since new default subject is 'human', always ensure 'detailed face' is ON
+            if (!newGlobal.quality.includes('detailed face')) {
+                newGlobal.quality = [...newGlobal.quality, 'detailed face'];
+            }
+            return {
+                ...prev,
+                subjects: newSubjects,
+                activeSubjectId: newId,
+                global: newGlobal
+            };
+        });
     };
 
     const removeSubject = (id: string) => {
@@ -72,10 +81,21 @@ export const usePortraitState = () => {
             if (prev.subjects.length <= 1) return prev; // Don't remove the last one
             const newSubjects = prev.subjects.filter(s => s.id !== id);
             const newActiveId = prev.activeSubjectId === id ? newSubjects[0].id : prev.activeSubjectId;
+
+            // Automation: check if any human remains
+            const hasHuman = newSubjects.some(s => s.subjectType === 'human');
+            const newGlobal = { ...prev.global };
+            if (!hasHuman) {
+                newGlobal.quality = newGlobal.quality.filter(q => q !== 'detailed face');
+            } else if (!newGlobal.quality.includes('detailed face')) {
+                newGlobal.quality = [...newGlobal.quality, 'detailed face'];
+            }
+
             return {
                 ...prev,
                 subjects: newSubjects,
-                activeSubjectId: newActiveId
+                activeSubjectId: newActiveId,
+                global: newGlobal
             };
         });
     };
@@ -183,7 +203,20 @@ export const usePortraitState = () => {
             }
 
             newSubjects[activeIndex] = newSubject as SubjectConfig;
-            return { ...prev, subjects: newSubjects };
+
+            // Automation: sync "Detailed Face" based on presence of any Human subject
+            let newGlobal = { ...prev.global };
+            const hasHuman = newSubjects.some(s => s.subjectType === 'human');
+
+            if (hasHuman) {
+                if (!newGlobal.quality.includes('detailed face')) {
+                    newGlobal.quality = [...newGlobal.quality, 'detailed face'];
+                }
+            } else {
+                newGlobal.quality = newGlobal.quality.filter(q => q !== 'detailed face');
+            }
+
+            return { ...prev, subjects: newSubjects, global: newGlobal };
         });
     };
 
