@@ -56,7 +56,7 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
   const hasImages = category.options.some(opt => opt.image);
 
   return (
-    <div className="glass-card rounded-xl p-5 hover:border-slate-600/50 transition-all duration-300 flex flex-col h-full group relative overflow-hidden">
+    <div className="glass-card rounded-xl p-5 hover:border-slate-600/50 transition-all duration-300 flex flex-col group relative w-full">
       {/* Decorative gradient blob */}
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500 pointer-events-none"></div>
 
@@ -81,7 +81,7 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 relative z-10">
+      <div className="flex-1 space-y-4 relative z-10 w-full">
         {/* Options Grid/List */}
         <div className={`
           ${hasImages ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'flex flex-wrap gap-2'}
@@ -175,23 +175,26 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
         </div>
 
         {/* Custom Input Area */}
-        <div className="relative group/input pt-2">
+        <form
+          className="relative group/input pt-2"
+          onSubmit={(e) => { e.preventDefault(); handleAddCustom(); }}
+        >
           <input
             type="text"
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            // onKeyDown={handleKeyDown} // Form submit handles Enter
             placeholder={`新增自訂${category.label}標籤...`}
             className="w-full pl-3 pr-10 py-2.5 rounded-lg bg-slate-950/50 border border-slate-700/50 text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600 shadow-inner"
           />
           <button
-            onClick={handleAddCustom}
+            type="submit"
             disabled={!customInput.trim()}
             className="absolute right-1 top-[calc(50%+4px)] -translate-y-1/2 p-1.5 rounded-md bg-indigo-600/80 text-white hover:bg-indigo-500 disabled:opacity-0 disabled:cursor-not-allowed transition-all duration-300 opacity-100 shadow-lg"
           >
             <PlusIcon />
           </button>
-        </div>
+        </form>
 
         {/* Empty State */}
         {(!category.options.length && (!Array.isArray(selectedValue) || selectedValue.length === 0)) && (

@@ -21,17 +21,16 @@ export const Accordion: React.FC<AccordionProps> = ({ title, icon, children, def
           <span className="font-semibold text-slate-200 tracking-wide text-sm md:text-base">{title}</span>
         </div>
         <span className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
         </span>
       </button>
-      
-      <div 
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
+
+      <div
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-[9000px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
       >
         <div className="p-4 border-t border-slate-800/50 bg-slate-950/20">
-            {children}
+          {children}
         </div>
       </div>
     </div>
