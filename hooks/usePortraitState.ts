@@ -107,6 +107,24 @@ export const usePortraitState = () => {
         setState(prev => ({ ...prev, activeSubjectId: id }));
     };
 
+    const duplicateSubject = (id: string) => {
+        setState(prev => {
+            if (prev.subjects.length >= 5) return prev;
+            const subjectToCopy = prev.subjects.find(s => s.id === id);
+            if (!subjectToCopy) return prev;
+
+            const newId = `subject-${Date.now()}`;
+            const newSubject = { ...subjectToCopy, id: newId };
+            const newSubjects = [...prev.subjects, newSubject];
+
+            return {
+                ...prev,
+                subjects: newSubjects,
+                activeSubjectId: newId
+            };
+        });
+    };
+
     // --- Selection Logic ---
     const handleSelect = (category: string, value: string, isToggle = true) => {
         setState(prev => {
@@ -477,6 +495,7 @@ export const usePortraitState = () => {
         setState,
         importState, // Exported new function
         addSubject,
+        duplicateSubject,
         removeSubject,
         setActiveSubject,
         handleSelect,

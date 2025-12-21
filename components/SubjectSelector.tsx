@@ -4,9 +4,10 @@ import { SubjectType } from '../types';
 interface SubjectSelectorProps {
     selected: SubjectType;
     onSelect: (type: SubjectType) => void;
+    accentColor?: string;
 }
 
-export const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selected, onSelect }) => {
+export const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selected, onSelect, accentColor = 'indigo' }) => {
 
     // Icons
     const UserIcon = () => (
@@ -25,11 +26,11 @@ export const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selected, onSe
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z" /></svg>
     );
 
-    const Button = ({ type, label, icon }: { type: SubjectType, label: string, icon: React.ReactNode }) => (
+    const Button = ({ type, label, icon, color }: { type: SubjectType, label: string, icon: React.ReactNode, color: string }) => (
         <button
             onClick={() => onSelect(type)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all text-sm font-medium border ${selected === type
-                ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 shadow-lg shadow-indigo-500/10'
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all text-sm font-bold border active:scale-95 ${selected === type
+                ? `bg-${color}-600/20 border-${color}-500 text-${color}-300 shadow-lg shadow-${color}-500/10`
                 : 'bg-slate-800 border-transparent text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                 }`}
         >
@@ -42,11 +43,11 @@ export const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selected, onSe
         <div className="">
             <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">主體類型 (Subject Type)</h2>
             <div className="flex flex-wrap gap-2">
-                <Button type="human" label="人類" icon={<UserIcon />} />
-                <Button type="animal" label="動物" icon={<PawIcon />} />
-                <Button type="vehicle" label="車輛" icon={<CarIcon />} />
-                <Button type="scenery" label="風景" icon={<MountainIcon />} />
-                <Button type="infographic" label="圖表" icon={
+                <Button type="human" label="人類" icon={<UserIcon />} color="indigo" />
+                <Button type="animal" label="動物" icon={<PawIcon />} color="emerald" />
+                <Button type="vehicle" label="車輛" icon={<CarIcon />} color="amber" />
+                <Button type="scenery" label="風景" icon={<MountainIcon />} color="cyan" />
+                <Button type="infographic" label="圖表" color="violet" icon={
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
                 } />
             </div>

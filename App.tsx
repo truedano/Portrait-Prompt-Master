@@ -9,6 +9,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { usePortraitState } from './hooks/usePortraitState';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
 import { useHistory } from './hooks/useHistory';
+import { BottomSheet } from './components/BottomSheet';
 
 const App: React.FC = () => {
   // --- Custom Hooks ---
@@ -17,6 +18,7 @@ const App: React.FC = () => {
     setState,
     importState, // Use importState for migration
     addSubject,
+    duplicateSubject,
     removeSubject,
     setActiveSubject,
     handleSelect,
@@ -56,13 +58,38 @@ const App: React.FC = () => {
 
   // New UI states for sliding panels
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [activeMobileCategory, setActiveMobileCategory] = useState<{ cat: any, selectedValue: any } | null>(null);
 
   // --- Prompt Generation ---
-  const generatedPrompt = usePromptGenerator(state, outputLang, outputFormat);
+  const { fullText: finalPromptString, sections: promptSections } = usePromptGenerator(state, outputLang, outputFormat);
+
+  // --- Dynamic Styling ---
+  const ACCENT_COLORS = {
+    human: 'indigo',
+    animal: 'emerald',
+    vehicle: 'amber',
+    scenery: 'cyan',
+    infographic: 'violet'
+  };
+  const activeColor = ACCENT_COLORS[activeSubject.subjectType];
+
+  const scrollToSection = (id: string) => {
+    // If it's a subject, switch to it first
+    if (state.subjects.some(s => s.id === id)) {
+      setActiveSubject(id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // For global/negative, scroll to that area
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   // --- Effects ---
   const handleCopy = async () => {
-    if (!generatedPrompt) return;
+    if (!finalPromptString) return;
 
     const onSuccess = () => {
       setCopied(true);
@@ -73,7 +100,7 @@ const App: React.FC = () => {
     try {
       // Try modern Clipboard API first
       if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(generatedPrompt);
+        await navigator.clipboard.writeText(finalPromptString);
         onSuccess();
       } else {
         throw new Error("Clipboard API unavailable");
@@ -83,7 +110,7 @@ const App: React.FC = () => {
       // Fallback for older browsers or non-secure contexts
       try {
         const textArea = document.createElement("textarea");
-        textArea.value = generatedPrompt;
+        textArea.value = finalPromptString;
 
         // Ensure it's not visible but part of DOM
         textArea.style.position = "fixed";
@@ -176,6 +203,9 @@ const App: React.FC = () => {
   const MapIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" /><line x1="9" x2="9" y1="3" y2="18" /><line x1="15" x2="15" y1="6" y2="21" /></svg>;
   const CameraIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>;
   const ChartIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>;
+  const CopyPlusIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+  );
 
   // --- Configuration for Accordion Groups ---
   const CATEGORY_GROUPS = [
@@ -231,7 +261,7 @@ const App: React.FC = () => {
           {activeSubject.subjectType === 'vehicle' && <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Vehicle</span>}
           <button
             onClick={handleClear}
-            className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-md transition-colors"
+            className="p-2.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-md transition-colors active:scale-90"
             title="清空所有選項"
           >
             <TrashIcon />
@@ -288,7 +318,13 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24 lg:pb-8 p-4 md:p-8 relative transition-colors duration-500">
+    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24 lg:pb-8 p-4 md:p-8 relative transition-colors duration-500 overflow-x-hidden">
+      {/* Background Decorative Spots */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '0s' }}></div>
+        <div className="absolute top-[20%] right-[-5%] w-[35%] h-[35%] bg-emerald-500/10 rounded-full blur-[100px] animate-float" style={{ animationDelay: '-5s' }}></div>
+        <div className="absolute bottom-[-10%] left-[15%] w-[45%] h-[45%] bg-cyan-500/10 rounded-full blur-[130px] animate-float" style={{ animationDelay: '-10s' }}></div>
+      </div>
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 gap-8 relative">
 
         {/* Header */}
@@ -357,20 +393,32 @@ const App: React.FC = () => {
                   className={`
                               flex items-center gap-2 px-6 py-3 rounded-t-xl transition-all whitespace-nowrap text-sm font-semibold
                               ${subj.id === state.activeSubjectId
-                      ? 'bg-slate-900 text-indigo-400 border-x border-t border-slate-800'
+                      ? `bg-slate-900 text-${activeColor}-400 border-x border-t border-slate-800`
                       : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}
                           `}
                 >
                   <UserIcon />
                   <span>Subject {idx + 1}</span>
-                  {state.subjects.length > 1 && (
-                    <div
-                      onClick={(e) => { e.stopPropagation(); removeSubject(subj.id); }}
-                      className="ml-2 p-1 rounded-full hover:bg-red-500/20 hover:text-red-400 text-slate-600 transition-colors"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>
-                    </div>
-                  )}
+                  <div className="flex gap-1 ml-2">
+                    {state.subjects.length < 5 && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); duplicateSubject(subj.id); }}
+                        className="p-2 rounded-full hover:bg-indigo-500/20 hover:text-indigo-400 text-slate-600 transition-colors"
+                        title="複製此主體"
+                      >
+                        <CopyPlusIcon />
+                      </div>
+                    )}
+                    {state.subjects.length > 1 && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); removeSubject(subj.id); }}
+                        className="p-2 rounded-full hover:bg-red-500/20 hover:text-red-400 text-slate-600 transition-colors"
+                        title="刪除此主體"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>
+                      </div>
+                    )}
+                  </div>
                 </button>
               ))}
 
@@ -385,8 +433,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 md:p-6 animate-in slide-in-from-top-2 duration-300">
-            <SubjectSelector selected={activeSubject.subjectType} onSelect={handleSubjectTypeSelect} />
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 md:p-6 animate-in slide-in-from-top-2 duration-300 relative z-10 glass-panel">
+            <SubjectSelector selected={activeSubject.subjectType} onSelect={handleSubjectTypeSelect} accentColor={activeColor} />
           </div>
         </div>
 
@@ -489,7 +537,7 @@ const App: React.FC = () => {
           )}
 
           {/* Negative Prompt - Collapsible or Mini */}
-          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+          <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4" id="negative-prompt">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <ShieldIcon /> 負面提示詞
@@ -587,12 +635,37 @@ const App: React.FC = () => {
                       const selectedValue = isGlobal ? (global as any)[catId] : (activeSubject as any)[catId];
 
                       return (
-                        <SelectionCard
-                          key={cat.id}
-                          category={{ ...cat, options: filteredOptions }}
-                          selectedValue={selectedValue}
-                          onSelect={handleSelect}
-                        />
+                        <div key={cat.id} id={catId === 'interaction' ? 'interaction' : undefined}>
+                          {/* Mobile View: Compact Trigger */}
+                          <div className="lg:hidden">
+                            <button
+                              onClick={() => setActiveMobileCategory({ cat: { ...cat, options: filteredOptions }, selectedValue })}
+                              className="w-full flex items-center justify-between p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl hover:bg-slate-800/50 transition-all active:scale-[0.98] group/item"
+                            >
+                              <div className="flex flex-col text-left">
+                                <span className="text-sm font-semibold text-slate-200 group-hover/item:text-indigo-400 transition-colors">{cat.label}</span>
+                                <span className="text-xs text-slate-500 truncate max-w-[240px] mt-1">
+                                  {Array.isArray(selectedValue)
+                                    ? (selectedValue.length > 0 ? selectedValue.join(', ') : '尚未選擇')
+                                    : (selectedValue && selectedValue !== 'none' ? selectedValue : '尚未選擇')}
+                                </span>
+                              </div>
+                              <span className="text-slate-600 group-hover/item:text-indigo-400 group-hover/item:translate-x-0.5 transition-all">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                              </span>
+                            </button>
+                          </div>
+
+                          {/* Desktop View: Full Card */}
+                          <div className="hidden lg:block">
+                            <SelectionCard
+                              key={cat.id}
+                              category={{ ...cat, options: filteredOptions }}
+                              selectedValue={selectedValue}
+                              onSelect={handleSelect}
+                            />
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
@@ -607,15 +680,37 @@ const App: React.FC = () => {
 
           {/* Output Preview Card (Sticky on Desktop) */}
           <div className="sticky top-4 space-y-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-indigo-500/10">
+            {/* Prompt Visualization Chips */}
+            {promptSections.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2 px-1">
+                {promptSections.map(section => (
+                  <button
+                    key={section.id}
+                    onClick={() => scrollToSection(section.id)}
+                    className={`
+                      px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all
+                      ${section.type === 'subject'
+                        ? (section.id === state.activeSubjectId ? `bg-${activeColor}-500/20 text-${activeColor}-400 ring-1 ring-${activeColor}-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]` : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-300')
+                        : section.type === 'negative' ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/30'
+                          : 'bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/30'
+                      }
+                    `}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className={`bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl shadow-${activeColor}-500/10 group/preview transition-colors relative`}>
+              <div className={`absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-${activeColor}-500 to-transparent opacity-50 group-hover/preview:opacity-100 transition-opacity`}></div>
               <OutputToolbar />
 
               <div className="p-4 bg-slate-950 min-h-[200px] relative group">
                 <pre className="whitespace-pre-wrap text-sm text-slate-300 font-mono leading-relaxed break-words">
-                  {generatedPrompt || <span className="text-slate-600 italic">請選擇左側選項以生成提示詞...</span>}
+                  {finalPromptString || <span className="text-slate-600 italic">請選擇左側選項以生成提示詞...</span>}
                 </pre>
 
-                {generatedPrompt && (
+                {finalPromptString && (
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={handleCopy}
@@ -630,7 +725,7 @@ const App: React.FC = () => {
 
             {/* Quality Tags (Quick Access) - GLOBAL */}
             {global.taskMode !== 'editing' && (
-              <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+              <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4" id="global-settings">
                 <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">畫質增強 (Quality Boosters)</h2>
                 <div className="flex flex-wrap gap-2">
                   {QUALITY_TAGS.map(tag => (
@@ -702,7 +797,7 @@ const App: React.FC = () => {
               <OutputToolbar />
               <div className="p-4 bg-slate-950 min-h-[150px]">
                 <pre className="whitespace-pre-wrap text-sm text-slate-300 font-mono">
-                  {generatedPrompt || <span className="text-slate-600 italic">尚未生成...</span>}
+                  {finalPromptString || <span className="text-slate-600 italic">尚未生成...</span>}
                 </pre>
               </div>
             </div>
@@ -718,8 +813,28 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Bottom Sheet for Mobile Selection */}
+      <BottomSheet
+        isOpen={!!activeMobileCategory}
+        onClose={() => setActiveMobileCategory(null)}
+        title={activeMobileCategory?.cat.label || ''}
+      >
+        {activeMobileCategory && (
+          <SelectionCard
+            category={activeMobileCategory.cat}
+            selectedValue={isGlobalProp(activeMobileCategory.cat.id) ? (global as any)[activeMobileCategory.cat.id] : (activeSubject as any)[activeMobileCategory.cat.id]}
+            onSelect={handleSelect}
+          />
+        )}
+      </BottomSheet>
     </div>
   );
+};
+
+// Helper for Bottom Sheet to get current value
+const isGlobalProp = (catId: string) => {
+  const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
+  return cat?.scope === 'global';
 };
 
 export default App;

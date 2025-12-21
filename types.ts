@@ -100,3 +100,15 @@ export interface PortraitState {
 
   activeSubjectId: string; // The ID of the currently selected subject in UI
 }
+
+export interface PromptSection {
+  id: string; // "subject-1", "global", etc.
+  type: 'subject' | 'global' | 'negative' | 'reference';
+  label: string;
+  content: string;
+}
+
+export interface GeneratedPromptResult {
+  fullText: string;
+  sections: PromptSection[];
+}

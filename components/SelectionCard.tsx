@@ -9,6 +9,7 @@ interface SelectionCardProps {
 
 export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selectedValue, onSelect }) => {
   const [customInput, setCustomInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Handler for the Random button
   const handleRandom = () => {
@@ -55,6 +56,16 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
   // Check if any option in this category has an image to decide layout mode
   const hasImages = category.options.some(opt => opt.image);
 
+  // Filter options based on search query
+  const filteredOptions = category.options.filter(opt =>
+    opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    opt.value.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const SearchIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+  );
+
   return (
     <div className="glass-card rounded-xl p-5 hover:border-slate-600/50 transition-all duration-300 flex flex-col group relative w-full">
       {/* Decorative gradient blob */}
@@ -73,7 +84,7 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
         <div className="flex gap-1">
           <button
             onClick={handleRandom}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all bg-slate-700/50 text-slate-300 hover:bg-indigo-500 hover:text-white backdrop-blur-sm border border-slate-600/50 hover:border-indigo-400"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all bg-slate-700/50 text-slate-300 hover:bg-indigo-500 hover:text-white backdrop-blur-sm border border-slate-600/50 hover:border-indigo-400 active:scale-95"
             title="隨機選擇一個項目"
           >
             <DiceIcon /> 隨機
@@ -82,12 +93,60 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
       </div>
 
       <div className="flex-1 space-y-4 relative z-10 w-full">
+        {/* Search & Custom Input row */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          {/* Custom Input (Now at the top) */}
+          <form
+            className="relative flex-1"
+            onSubmit={(e) => { e.preventDefault(); handleAddCustom(); }}
+          >
+            <input
+              type="text"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              placeholder={`+ 自訂${category.label}...`}
+              className="w-full pl-4 pr-12 py-3 rounded-xl bg-slate-950/40 border border-slate-700/50 text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
+            />
+            <button
+              type="submit"
+              disabled={!customInput.trim()}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-indigo-600/80 text-white hover:bg-indigo-500 disabled:opacity-0 transition-all active:scale-90"
+            >
+              <PlusIcon />
+            </button>
+          </form>
+
+          {/* Search Filter (Only show if many options) */}
+          {category.options.length > 8 && (
+            <div className="relative flex-1">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+                <SearchIcon />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜尋標籤..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950/40 border border-slate-700/50 text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Options Grid/List */}
         <div className={`
           ${hasImages ? 'grid grid-cols-2 sm:grid-cols-3 gap-3' : 'flex flex-wrap gap-2'}
         `}>
           {/* 1. Render Preset Options */}
-          {category.options.map((option) => {
+          {filteredOptions.map((option) => {
             const isSelected = Array.isArray(selectedValue)
               ? selectedValue.includes(option.value)
               : selectedValue === option.value;
@@ -132,7 +191,7 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
                 key={option.value}
                 onClick={() => onSelect(category.id as string, option.value, true)}
                 className={`
-                    px-3 py-1.5 text-sm rounded-lg border transition-all duration-200 text-left relative overflow-hidden
+                    px-4 py-2.5 text-sm rounded-xl border transition-all duration-200 text-left relative overflow-hidden active:scale-95
                     ${isSelected
                     ? 'bg-indigo-600/90 border-indigo-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)]'
                     : 'bg-slate-800/40 border-slate-700/50 text-slate-300 hover:bg-slate-700/60 hover:border-slate-500/50 hover:text-white backdrop-blur-sm'
@@ -174,27 +233,6 @@ export const SelectionCard: React.FC<SelectionCardProps> = ({ category, selected
           )}
         </div>
 
-        {/* Custom Input Area */}
-        <form
-          className="relative group/input pt-2"
-          onSubmit={(e) => { e.preventDefault(); handleAddCustom(); }}
-        >
-          <input
-            type="text"
-            value={customInput}
-            onChange={(e) => setCustomInput(e.target.value)}
-            // onKeyDown={handleKeyDown} // Form submit handles Enter
-            placeholder={`新增自訂${category.label}標籤...`}
-            className="w-full pl-3 pr-10 py-2.5 rounded-lg bg-slate-950/50 border border-slate-700/50 text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600 shadow-inner"
-          />
-          <button
-            type="submit"
-            disabled={!customInput.trim()}
-            className="absolute right-1 top-[calc(50%+4px)] -translate-y-1/2 p-1.5 rounded-md bg-indigo-600/80 text-white hover:bg-indigo-500 disabled:opacity-0 disabled:cursor-not-allowed transition-all duration-300 opacity-100 shadow-lg"
-          >
-            <PlusIcon />
-          </button>
-        </form>
 
         {/* Empty State */}
         {(!category.options.length && (!Array.isArray(selectedValue) || selectedValue.length === 0)) && (
