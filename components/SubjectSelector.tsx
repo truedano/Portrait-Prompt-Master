@@ -39,9 +39,9 @@ export const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selected, onSe
     );
 
     return (
-        <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4 mb-6">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">主體類型 (Subject Type)</h2>
-            <div className="flex gap-2">
+        <div className="">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">主體類型 (Subject Type)</h2>
+            <div className="flex flex-wrap gap-2">
                 <Button type="human" label="人類" icon={<UserIcon />} />
                 <Button type="animal" label="動物" icon={<PawIcon />} />
                 <Button type="vehicle" label="車輛" icon={<CarIcon />} />

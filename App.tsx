@@ -151,7 +151,7 @@ const App: React.FC = () => {
   );
 
   const XIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>
   );
 
   const ImageIcon = () => (
@@ -288,8 +288,8 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24 lg:pb-8 p-4 md:p-8 relative">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24 lg:pb-8 p-4 md:p-8 relative transition-colors duration-500">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 gap-8 relative">
 
         {/* Header */}
         <div className="lg:col-span-12 mb-4 lg:mb-0 flex flex-col md:flex-row md:justify-between md:items-end gap-4">
@@ -346,49 +346,53 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* --- SUBJECT TABS --- */}
-        <div className="lg:col-span-12">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900/20 items-center">
-            {state.subjects.map((subj, idx) => (
-              <button
-                key={subj.id}
-                onClick={() => setActiveSubject(subj.id)}
-                className={`
-                            flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 transition-all whitespace-nowrap
-                            ${subj.id === state.activeSubjectId
-                    ? 'bg-slate-800 border-indigo-500 text-white shadow-lg'
-                    : 'bg-slate-900/50 border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}
-                        `}
-              >
-                <UserIcon />
-                <span className="font-medium text-sm">Subject {idx + 1}</span>
-                {state.subjects.length > 1 && (
-                  <div
-                    onClick={(e) => { e.stopPropagation(); removeSubject(subj.id); }}
-                    className="ml-2 p-1 rounded-full hover:bg-red-500/20 hover:text-red-400 text-slate-600 transition-colors"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
-                  </div>
-                )}
-              </button>
-            ))}
+        {/* --- SUBJECT TABS & TYPE --- */}
+        <div className="lg:col-span-12 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-800">
+            <div className="flex gap-1 overflow-x-auto scrollbar-none">
+              {state.subjects.map((subj, idx) => (
+                <button
+                  key={subj.id}
+                  onClick={() => setActiveSubject(subj.id)}
+                  className={`
+                              flex items-center gap-2 px-6 py-3 rounded-t-xl transition-all whitespace-nowrap text-sm font-semibold
+                              ${subj.id === state.activeSubjectId
+                      ? 'bg-slate-900 text-indigo-400 border-x border-t border-slate-800'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}
+                          `}
+                >
+                  <UserIcon />
+                  <span>Subject {idx + 1}</span>
+                  {state.subjects.length > 1 && (
+                    <div
+                      onClick={(e) => { e.stopPropagation(); removeSubject(subj.id); }}
+                      className="ml-2 p-1 rounded-full hover:bg-red-500/20 hover:text-red-400 text-slate-600 transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="M6 6l12 12" /></svg>
+                    </div>
+                  )}
+                </button>
+              ))}
 
-            {state.subjects.length < 5 && (
-              <button
-                onClick={addSubject}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-slate-700 text-slate-500 hover:text-indigo-400 hover:border-indigo-500 hover:bg-indigo-500/10 transition-all text-sm font-medium whitespace-nowrap"
-              >
-                + Add Subject
-              </button>
-            )}
+              {state.subjects.length < 5 && (
+                <button
+                  onClick={addSubject}
+                  className="px-4 py-3 text-slate-500 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center gap-1"
+                >
+                  <span className="text-lg">+</span> Add
+                </button>
+              )}
+            </div>
           </div>
-          {/* Visual Divider line related to active tab */}
-          <div className="h-[1px] bg-slate-800 w-full mb-4"></div>
+
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 md:p-6 animate-in slide-in-from-top-2 duration-300">
+            <SubjectSelector selected={activeSubject.subjectType} onSelect={handleSubjectTypeSelect} />
+          </div>
         </div>
 
 
         {/* Left Column: Task Mode & References */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-12 xl:col-span-3 space-y-6">
           {/* Task Mode Selector */}
           <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
             <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">工作模式 (Task Mode)</h2>
@@ -426,7 +430,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <SubjectSelector selected={activeSubject.subjectType} onSelect={handleSubjectTypeSelect} />
 
           {/* Reference Images (Visible in all modes, crucial for Editing) */}
           <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
@@ -523,7 +526,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Center Column: Main Selectors */}
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-8 xl:col-span-6 space-y-6">
           <div className="grid grid-cols-1 gap-4">
             {/* Render Accordion Groups */}
             {CATEGORY_GROUPS.map((group) => {
@@ -542,8 +545,24 @@ const App: React.FC = () => {
 
               if (visibleCategories.length === 0) return null;
 
+              // Calculate how many categories in this group have a selection
+              const selectedCount = visibleCategories.reduce((count, catId) => {
+                const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
+                if (!cat) return count;
+                const isGlobal = cat.scope === 'global';
+                const val = isGlobal ? (global as any)[catId] : (activeSubject as any)[catId];
+
+                if (Array.isArray(val)) {
+                  return count + (val.length > 0 ? 1 : 0);
+                }
+                if (val && val !== '' && val !== 'none') {
+                  return count + 1;
+                }
+                return count;
+              }, 0);
+
               return (
-                <Accordion key={group.id} title={group.title} icon={group.icon} defaultOpen={group.id === 'appearance' || group.id === 'scene'}>
+                <Accordion key={group.id} title={group.title} icon={group.icon} count={selectedCount} defaultOpen={group.id === 'appearance' || group.id === 'scene'}>
                   <div className="grid grid-cols-1 gap-4">
                     {visibleCategories.map(catId => {
                       const cat = PROMPT_CATEGORIES.find(c => c.id === catId);
@@ -584,7 +603,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Column: Output & Quality & Preservation */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-4 xl:col-span-3 space-y-4">
 
           {/* Output Preview Card (Sticky on Desktop) */}
           <div className="sticky top-4 space-y-4">
