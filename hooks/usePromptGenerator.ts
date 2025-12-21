@@ -46,6 +46,29 @@ export const usePromptGenerator = (
         return getTerm(key, val, lang);
     };
 
+    const jsonToYaml = (obj: any, indent = 0): string => {
+        const spaces = '  '.repeat(indent);
+        if (Array.isArray(obj)) {
+            if (obj.length === 0) return ' []';
+            return obj.map(item => `\n${spaces}- ${jsonToYaml(item, indent + 1).trim()}`).join('');
+        } else if (typeof obj === 'object' && obj !== null) {
+            let yaml = '';
+            Object.entries(obj).forEach(([key, value]) => {
+                if (value === null || value === undefined || value === '') return;
+                const valStr = jsonToYaml(value, indent + 1);
+                yaml += `\n${spaces}${key}:${valStr.includes('\n') ? valStr : ' ' + valStr.trim()}`;
+            });
+            return yaml;
+        } else {
+            const str = String(obj);
+            // Basic escape for strings with special characters
+            if (str.includes(':') || str.includes('#') || str.includes('[') || str.includes(']') || str.includes('{') || str.includes('}') || str.includes(',') || str.includes('*') || str.includes('!')) {
+                return ` "${str.replace(/"/g, '\\"')}"`;
+            }
+            return ` ${str}`;
+        }
+    };
+
     // --- Logic ---
     useEffect(() => {
         const rawGlobal = state.global;
@@ -234,6 +257,13 @@ export const usePromptGenerator = (
                 subjects: state.subjects.map(s => resolveSubject(s)),
             };
             fullText = JSON.stringify(dataObj, null, 2);
+        } else if (outputFormat === 'yaml') {
+            const dataObj = {
+                meta: { language: outputLang, task_mode: rawGlobal.taskMode },
+                global: globalFields,
+                subjects: state.subjects.map(s => resolveSubject(s))
+            };
+            fullText = jsonToYaml(dataObj).trim();
         } else if (outputFormat === 'markdown') {
             fullText = sections.map(s => `**${s.label}**\n> ${s.content}`).join('\n\n');
         } else {
