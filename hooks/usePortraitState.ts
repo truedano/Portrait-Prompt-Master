@@ -24,7 +24,10 @@ const createDefaultSubject = (id: string, type: SubjectType = 'human'): SubjectC
     animalSpecies: '',
     animalFur: [],
     vehicleType: '',
-    vehicleColor: ''
+    vehicleColor: '',
+    chartType: '',
+    infographicStyle: '',
+    infographicContent: ''
 });
 
 const defaultGlobal: GlobalConfig = {
@@ -186,7 +189,8 @@ export const usePortraitState = () => {
                 'nationality', 'age', 'role', 'bodyType', 'faceShape', 'eyeGaze',
                 'hairColor', 'hairStyle', 'appearance', 'clothing', 'clothingDetail',
                 'accessories', 'action', 'hands', 'mood',
-                'animalSpecies', 'animalFur', 'vehicleType', 'vehicleColor'
+                'animalSpecies', 'animalFur', 'vehicleType', 'vehicleColor',
+                'chartType', 'infographicStyle', 'infographicContent'
             ].forEach(key => {
                 if (!allowedCategories.includes(key)) {
                     if (Array.isArray(newSubject[key])) newSubject[key] = [];
@@ -208,12 +212,26 @@ export const usePortraitState = () => {
             let newGlobal = { ...prev.global };
             const hasHuman = newSubjects.some(s => s.subjectType === 'human');
 
+            // 1. Handle "Detailed Face"
             if (hasHuman) {
                 if (!newGlobal.quality.includes('detailed face')) {
                     newGlobal.quality = [...newGlobal.quality, 'detailed face'];
                 }
             } else {
                 newGlobal.quality = newGlobal.quality.filter(q => q !== 'detailed face');
+            }
+
+            // 2. Infographic Automation: Force High Quality to avoid text errors (as requested)
+            if (type === 'infographic') {
+                // Ensure high quality tags are present
+                const recommendedTags = ['masterpiece', 'best quality', '4k', '8k', 'highres'];
+                recommendedTags.forEach(tag => {
+                    if (!newGlobal.quality.includes(tag)) {
+                        newGlobal.quality = [...newGlobal.quality, tag];
+                    }
+                });
+                // Note: We deliberately KEEP these tags now, reverting the previous logic that removed them.
+                // We still want to remove 'detailed face' if no human, which is handled by step 1.
             }
 
             return { ...prev, subjects: newSubjects, global: newGlobal };

@@ -6,16 +6,21 @@ export interface OptionItem {
   value: string;
   label: string;
   gender?: 'male' | 'female'; // Optional gender constraint
+  image?: string; // Optional preview image
 }
+
+export type PromptOption = OptionItem;
 
 export interface OptionCategory {
   id: string;
-  title: string;
+  label: string; // Display name
+  description?: string; // Helper text
   options: OptionItem[];
-  scope?: 'global' | 'subject'; // Determine where this value is stored
+  scope?: 'global' | 'subject';
+  multiSelect?: boolean;
 }
 
-export type SubjectType = 'human' | 'animal' | 'vehicle' | 'scenery';
+export type SubjectType = 'human' | 'animal' | 'vehicle' | 'scenery' | 'infographic';
 
 export type Gender = 'male' | 'female'; // | 'other' in future?
 
@@ -48,6 +53,11 @@ export interface SubjectConfig {
   // Vehicle Attributes
   vehicleType: string;
   vehicleColor: string | string[];
+
+  // Infographic Attributes
+  chartType: string;
+  infographicStyle: string;
+  infographicContent: string;
 }
 
 export interface ReferenceImage {

@@ -20,7 +20,9 @@ export const NATIONALITIES: PromptOption[] = [
 export const SUBJECT_TYPES: PromptOption[] = [
   { label: '人類 (Human)', value: 'human' },
   { label: '動物 (Animal)', value: 'animal' },
-  { label: '車輛 (Vehicle)', value: 'vehicle' }
+  { label: '車輛 (Vehicle)', value: 'vehicle' },
+  { label: '風景 (Scenery)', value: 'scenery' },
+  { label: '圖表 (Infographic)', value: 'infographic' }
 ];
 
 export const ANIMAL_SPECIES: PromptOption[] = [
@@ -621,6 +623,57 @@ export const PROMPT_CATEGORIES: (OptionCategory & { scope: 'global' | 'subject' 
       { label: '21:9 (超寬螢幕)', value: 'aspect ratio 21:9' }
     ],
     scope: 'global'
+  },
+  // --- INFOGRAPHIC SPECIFIC ---
+  {
+    id: 'chartType',
+    label: '圖表類型 (Chart Type)',
+    description: '資訊圖表的呈現形式',
+    options: [
+      { label: '長條圖', value: 'Bar chart' },
+      { label: '圓餅圖', value: 'Pie chart' },
+      { label: '折線圖', value: 'Line graph' },
+      { label: '流程圖', value: 'Flowchart diagram' },
+      { label: '心智圖', value: 'Mind map' },
+      { label: '組織圖', value: 'Organizational chart' },
+      { label: '資訊海報', value: 'Infographic poster' },
+      { label: '時間軸', value: 'Timeline chart' },
+      { label: '雷達圖', value: 'Radar chart' },
+      { label: 'UI 介面', value: 'User Interface layout' },
+      { label: '儀表板', value: 'Dashboard UI' }
+    ],
+    scope: 'subject'
+  },
+  {
+    id: 'infographicStyle',
+    label: '圖表風格 (Style)',
+    description: '資訊圖表的視覺風格',
+    options: [
+      { label: '扁平化設計 (Flat Design)', value: 'flat design, vector art' },
+      { label: '極簡主義 (Minimalist)', value: 'minimalist, clean lines' },
+      { label: '3D 立體 (3D Isometric)', value: '3d isometric, blender render' },
+      { label: '手繪風格 (Hand Drawn)', value: 'hand drawn sketch, doodle style' },
+      { label: '科技感 (Tech/Cyber)', value: 'futuristic, cyberpunk, neon' },
+      { label: '專業商務 (Corporate)', value: 'professional corporate, blue theme' },
+      { label: '粉彩柔和 (Pastel)', value: 'pastel colors, soft aesthetic' },
+      { label: '復古海報 (Vintage)', value: 'vintage poster style, grainy' }
+    ],
+    scope: 'subject'
+  },
+  {
+    id: 'infographicContent',
+    label: '內容主題 (Content Context)',
+    description: '輸入圖表的主要內容 (如: 旅遊規劃、銷售報告)',
+    options: [
+      { label: '旅遊行程', value: 'Travel Itinerary' },
+      { label: '年度報告', value: 'Annual Report' },
+      { label: '銷售數據', value: 'Sales Data' },
+      { label: '專案流程', value: 'Project Timeline' },
+      { label: '產品比較', value: 'Product Comparison' },
+      { label: '教學指南', value: 'How-to Guide' },
+      { label: '社群貼文', value: 'Social Media Post' }
+    ],
+    scope: 'subject'
   }
 ];
 
@@ -631,7 +684,10 @@ export const QUALITY_TAGS: PromptOption[] = [
   { label: '高度細節', value: 'highly detailed' },
   { label: 'HDR', value: 'HDR' },
   { label: 'ArtStation 趨勢', value: 'trending on artstation' },
-  { label: '精緻五官', value: 'detailed face' }
+  { label: '精緻五官', value: 'detailed face' },
+  // 4K for infographic
+  { label: '4K', value: '4k' },
+  { label: '高解析度', value: 'highres' }
 ];
 
 export const PRESERVATION_OPTIONS: PromptOption[] = [
@@ -686,6 +742,12 @@ export const SUBJECT_CATEGORY_CONFIG: Record<string, string[]> = {
   scenery: [
     'environment', 'lighting', 'composition', 'era', 'colorPalette', 'artStyle', 'mood', 'camera', 'aspectRatio',
     'cameraMovement', 'motionStrength'
+  ],
+  infographic: [
+    'chartType',
+    'infographicContent',
+    'infographicStyle'
+    // STRICTLY REMOVED ALL OTHERS to hide the "Scene" and "Style" groups as requested
   ]
 };
 

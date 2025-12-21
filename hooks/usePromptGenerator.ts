@@ -71,6 +71,10 @@ export const usePromptGenerator = (
                 vehicleType: resolveField('vehicleType', subj.vehicleType, outputLang),
                 vehicleColor: resolveField('vehicleColor', subj.vehicleColor, outputLang),
 
+                chartType: resolveField('chartType', (subj as any).chartType, outputLang),
+                infographicStyle: resolveField('infographicStyle', (subj as any).infographicStyle, outputLang),
+                infographicContent: resolveField('infographicContent', (subj as any).infographicContent, outputLang),
+
                 eyeGaze: resolveField('eyeGaze', subj.eyeGaze, outputLang),
                 hairColor: resolveField('hairColor', subj.hairColor, outputLang),
                 hairStyle: resolveField('hairStyle', subj.hairStyle, outputLang),
@@ -85,7 +89,8 @@ export const usePromptGenerator = (
 
             // Filter mood for scenery
             if (subj.subjectType === 'scenery') {
-                const filteredMood = subj.mood.filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
+                const moodArray = Array.isArray(subj.mood) ? subj.mood : (subj.mood ? [subj.mood] : []);
+                const filteredMood = moodArray.filter(m => !SCENERY_FORBIDDEN_MOODS.includes(m));
                 fields.mood = resolveField('mood', filteredMood, outputLang);
             }
 
@@ -152,6 +157,17 @@ export const usePromptGenerator = (
                     subjectDesc = outputLang === 'en' ? `A ${sub}` : `一輛${sub}`;
                 } else if (subj.subjectType === 'scenery') {
                     subjectDesc = outputLang === 'en' ? 'Landscape' : '風景';
+                } else if (subj.subjectType === 'infographic') {
+                    // Optimized Infographic Prompt Structure:
+                    // Infographic: [Style] [Chart Type] about [Content]
+                    const parts = [
+                        sFields.infographicStyle,
+                        sFields.chartType,
+                        sFields.infographicContent ? (outputLang === 'en' ? `about ${sFields.infographicContent}` : `關於 ${sFields.infographicContent}`) : null
+                    ].filter(Boolean);
+
+                    const sub = parts.join(outputLang === 'en' ? ', ' : '，');
+                    subjectDesc = outputLang === 'en' ? `Infographic: ${sub}` : `資訊圖表：${sub}`;
                 }
 
                 // Combine subject details
