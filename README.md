@@ -2,7 +2,7 @@
 <img width="1200" height="475" alt="Portrait Prompt Master" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Portrait Prompt Master v2.3
+# Portrait Prompt Master v2.4
 
 **Portrait Prompt Master** 是一個專為 AI 創作者設計的高級提示詞生成工具。無論您是使用 Midjourney、Stable Diffusion 還是最新的 AI 影片生成模型 (如 Google Veo / OpenAI Sora)，此工具都能幫助您快速構建精確、豐富且高品質的提示詞。
 
@@ -32,7 +32,9 @@
 - **智慧隨機 (Smart Randomize)**: 一鍵生成特定主題 (Cyberpunk, Fantasy, Vintage, Portrait)。
 - **歷史紀錄與收藏**: 自動保存生成歷史，並可將喜歡的組合加入收藏。
 - **多語言輸出**: 支援 **英文 (English)** 與 **中文** 提示詞輸出。
-- **多種格式**: 支援 Text, JSON, YAML, Markdown 等多種輸出格式，方便對接 API 或筆記。
+- **多種格式**: 支援 Text, JSON, YAML, Markdown 等多種輸出格式，已修復 YAML 導出格式。
+- **📱 行動端優化**: 全新的 **底部抽屜系統 (Bottom Sheets)** 與觸控優化，提升手機操作體驗。
+- **🎨 視覺化引導**: 主體感應式配色 (Accent Colors) 與提示詞分區標籤隨時導覽。
 
 ## 🚀 快速開始 (Quick Start)
 
@@ -57,6 +59,13 @@
 - **Icons**: Lucide React
 
 ## 📝 更新日誌 (Changelog)
+
+### v2.4
+- 📱 **新增**: 移動端**底部抽屜式選單 (Bottom Sheets)**，極大減少窄屏垂直滾動。
+- 🎨 **新增**: **主體感應式配色 (Subject-Themed Accent Colors)**，介面配色隨選擇自動變換。
+- 🏷️ **新增**: **提示詞可視化標籤 (Prompt Visualization Chips)**，快速預覽與滾動跳轉到特定區段。
+- 🔨 **修復**: 正確實現 **YAML 導出格式**，並解決 React 對象渲染錯誤。
+- ⚡ **優化**: 大幅增加行動端**觸控熱區 (Touch Targets)**，優化 Subject Tab 的操作感。
 
 ### v2.3
 - ✨ **新增**: 資訊圖表主體 (Infographic Subject)，專為生成數據圖表與 UI 介面設計。
