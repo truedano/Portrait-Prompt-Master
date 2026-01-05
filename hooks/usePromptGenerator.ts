@@ -418,16 +418,25 @@ export const usePromptGenerator = (
             const globGroups = isZh ? GLOBAL_GROUPS_ZH : GLOBAL_GROUPS_EN;
             const groupedSections: string[] = [];
 
+            // Add Task Mode Header
+            const taskHeader = isZh ?
+                (rawGlobal.taskMode === 'editing' ? '圖片編輯模式 (Image Editing)' :
+                    rawGlobal.taskMode === 'video_generation' ? '影片生成模式 (Video Generation)' :
+                        '圖片生成模式 (Image Generation)') :
+                (rawGlobal.taskMode === 'editing' ? 'Task: Image Editing' :
+                    rawGlobal.taskMode === 'video_generation' ? 'Task: Video Generation' :
+                        'Task: Image Generation');
+
+            groupedSections.push(isMd ? `# ${taskHeader}` : `【${taskHeader}】`);
+
             state.subjects.forEach((subj, index) => {
                 const sFields = resolveSubject(subj);
                 const typeGroups = subGroups[subj.subjectType] || [];
                 const typeLabel = isZh ? (SUBJECT_TYPE_LABELS_ZH[subj.subjectType] || subj.subjectType) : subj.subjectType;
 
                 let subjectTitle = '';
-                if (state.subjects.length > 1) {
-                    const titleText = isZh ? `● 主體 ${index + 1} (${typeLabel})` : `● Subject ${index + 1} (${typeLabel})`;
-                    subjectTitle = isMd ? `## ${titleText}` : titleText;
-                }
+                const titleText = isZh ? `主體 ${index + 1} (${typeLabel})` : `Subject ${index + 1} (${typeLabel})`;
+                subjectTitle = isMd ? `## ● ${titleText}` : `● ${titleText}`;
 
                 const subjectContent: string[] = [];
                 typeGroups.forEach(group => {
@@ -445,7 +454,7 @@ export const usePromptGenerator = (
                 });
 
                 if (subjectContent.length > 0) {
-                    groupedSections.push((subjectTitle ? subjectTitle + '\n' : '') + subjectContent.join('\n\n'));
+                    groupedSections.push(subjectTitle + '\n' + subjectContent.join('\n\n'));
                 }
             });
 
@@ -453,6 +462,9 @@ export const usePromptGenerator = (
             globGroups.forEach(group => {
                 const groupLines = group.fields.map(f => {
                     if (f === 'interaction' && state.subjects.length <= 1) return null;
+                    if (rawGlobal.taskMode !== 'video_generation' && (f === 'cameraMovement' || f === 'motionStrength')) return null;
+                    if (rawGlobal.taskMode !== 'editing' && f === 'preservation') return null;
+
                     const val = (globalFields as any)[f];
                     if (!val) return null;
                     const label = labels[f] || f;
@@ -466,8 +478,8 @@ export const usePromptGenerator = (
             });
 
             if (globalContent.length > 0) {
-                const globalTitle = isZh ? `● 全域設定` : `● Global Settings`;
-                const title = isMd ? `## ${globalTitle}` : globalTitle;
+                const globalTitle = isZh ? `全域設定` : `Global Settings`;
+                const title = isMd ? `## ● ${globalTitle}` : `● ${globalTitle}`;
                 groupedSections.push(`${title}\n` + globalContent.join('\n\n'));
             }
 
@@ -479,12 +491,25 @@ export const usePromptGenerator = (
 
             fullText = groupedSections.join('\n\n');
         } else {
-            // Text format (English): Join subjects with AND, then add global
-            fullText = [
-                state.subjects.length > 1 ? globalFields.interaction : null,
-                ...subjectStrings,
-                ...globalContentParts
-            ].filter(Boolean).join(outputLang === 'en' ? ', ' : '，');
+            // Text format (English): Task-specific narratives
+            const subjectsJoined = subjectStrings.join(' AND ');
+
+            if (rawGlobal.taskMode === 'video_generation') {
+                const camera = globalFields.cameraMovement ? `Camera moves: ${globalFields.cameraMovement}. ` : '';
+                const motion = globalFields.motionStrength ? `Motion: ${globalFields.motionStrength}. ` : '';
+                fullText = `A cinematic video showcasing ${subjectsJoined}. ${camera}${motion}Set in ${globalFields.environment || 'the scene'}, ${globalContentParts.filter(p => !subjectStrings.includes(p) && p !== globalFields.cameraMovement && p !== globalFields.motionStrength).join(', ')}.`;
+            } else if (rawGlobal.taskMode === 'editing') {
+                const preserve = globalFields.preservation ? ` While preserving ${globalFields.preservation},` : '';
+                const refs = rawGlobal.referenceImages.length > 0 ? ` based on the provided reference(s),` : '';
+                fullText = `Modify the image to feature ${subjectsJoined}.${preserve}${refs} Overall style adjustment: ${globalContentParts.filter(p => !subjectStrings.includes(p)).join(', ')}.`;
+            } else {
+                // Standard generation
+                fullText = [
+                    state.subjects.length > 1 ? globalFields.interaction : null,
+                    ...subjectStrings,
+                    ...globalContentParts
+                ].filter(Boolean).join(', ');
+            }
 
             if (globalFields.negative) fullText += `\n\n--no ${globalFields.negative}`;
         }
