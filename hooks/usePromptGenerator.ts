@@ -2,6 +2,152 @@ import { useState, useEffect } from 'react';
 import { PortraitState, OutputLanguage, OutputFormat, SubjectConfig, GlobalConfig, GeneratedPromptResult, PromptSection } from '../types';
 import { PROMPT_CATEGORIES, QUALITY_TAGS, PRESERVATION_OPTIONS, SCENERY_FORBIDDEN_MOODS } from '../constants';
 
+const CATEGORY_LABELS_ZH: Record<string, string> = {
+    subjectType: '主體類型',
+    nationality: '國籍/人種',
+    age: '年齡',
+    gender: '性別',
+    role: '角色/職業',
+    bodyType: '體型',
+    faceShape: '臉型',
+    eyeGaze: '視線與眼神',
+    hairColor: '髮色',
+    hairStyle: '髮型',
+    appearance: '外觀細節',
+    clothing: '服裝',
+    clothingDetail: '服裝材質',
+    accessories: '飾品與配件',
+    action: '動作',
+    hands: '手部互動',
+    mood: '情緒',
+    animalSpecies: '物種',
+    animalFur: '毛色/特徵',
+    vehicleType: '車型',
+    vehicleColor: '烤漆顏色',
+    chartType: '圖表類型',
+    infographicStyle: '圖表風格',
+    infographicContent: '內容主題',
+    composition: '構圖與視角',
+    cameraMovement: '運鏡方式',
+    motionStrength: '動態強度',
+    environment: '背景環境',
+    era: '時代背景',
+    lighting: '光影',
+    colorPalette: '色調與濾鏡',
+    artStyle: '藝術風格',
+    camera: '攝影器材',
+    aspectRatio: '解析度/比例',
+    quality: '品質要求',
+    preservation: '保留細節',
+    interaction: '主體互動'
+};
+
+const SUBJECT_GROUPS_ZH: Record<string, { label: string; fields: string[] }[]> = {
+    human: [
+        { label: '主體特徵', fields: ['nationality', 'age', 'gender', 'role'] },
+        { label: '外形細節', fields: ['bodyType', 'faceShape', 'hairColor', 'hairStyle', 'appearance', 'eyeGaze'] },
+        { label: '服裝飾品', fields: ['clothing', 'clothingDetail', 'accessories'] },
+        { label: '動作狀態', fields: ['action', 'hands', 'mood'] }
+    ],
+    animal: [
+        { label: '物種特徵', fields: ['animalSpecies', 'animalFur'] },
+        { label: '外觀細節', fields: ['appearance', 'clothing', 'accessories'] },
+        { label: '動作狀態', fields: ['action', 'mood'] }
+    ],
+    vehicle: [
+        { label: '車輛特徵', fields: ['vehicleType', 'vehicleColor'] }
+    ],
+    scenery: [
+        { label: '場景情緒', fields: ['mood'] }
+    ],
+    infographic: [
+        { label: '圖表資訊', fields: ['chartType', 'infographicStyle', 'infographicContent'] }
+    ]
+};
+
+const GLOBAL_GROUPS_ZH = [
+    { label: '構圖鏡頭', fields: ['composition', 'camera', 'aspectRatio', 'cameraMovement', 'motionStrength'] },
+    { label: '場景與風格', fields: ['environment', 'era', 'lighting', 'colorPalette', 'artStyle'] },
+    { label: '全域與畫質', fields: ['quality', 'preservation', 'interaction'] }
+];
+
+const CATEGORY_LABELS_EN: Record<string, string> = {
+    subjectType: 'Subject Type',
+    nationality: 'Nationality',
+    age: 'Age',
+    gender: 'Gender',
+    role: 'Role',
+    bodyType: 'Body Type',
+    faceShape: 'Face Shape',
+    eyeGaze: 'Gaze',
+    hairColor: 'Hair Color',
+    hairStyle: 'Hair Style',
+    appearance: 'Features',
+    clothing: 'Clothing',
+    clothingDetail: 'Clothing Detail',
+    accessories: 'Accessories',
+    action: 'Pose',
+    hands: 'Hands',
+    mood: 'Mood',
+    animalSpecies: 'Species',
+    animalFur: 'Fur',
+    vehicleType: 'Vehicle Type',
+    vehicleColor: 'Paint Color',
+    chartType: 'Chart Type',
+    infographicStyle: 'Infographic Style',
+    infographicContent: 'Content Context',
+    composition: 'Composition',
+    cameraMovement: 'Camera Move',
+    motionStrength: 'Motion Strength',
+    environment: 'Environment',
+    era: 'Era',
+    lighting: 'Lighting',
+    colorPalette: 'Color Palette',
+    artStyle: 'Style',
+    camera: 'Camera & Lens',
+    aspectRatio: 'Resolution',
+    quality: 'Quality',
+    preservation: 'Preserve',
+    interaction: 'Interaction'
+};
+
+const SUBJECT_GROUPS_EN: Record<string, { label: string; fields: string[] }[]> = {
+    human: [
+        { label: 'Core Attributes', fields: ['nationality', 'age', 'gender', 'role'] },
+        { label: 'Visual Details', fields: ['bodyType', 'faceShape', 'hairColor', 'hairStyle', 'appearance', 'eyeGaze'] },
+        { label: 'Attire', fields: ['clothing', 'clothingDetail', 'accessories'] },
+        { label: 'State & Action', fields: ['action', 'hands', 'mood'] }
+    ],
+    animal: [
+        { label: 'Species Info', fields: ['animalSpecies', 'animalFur'] },
+        { label: 'Appearance', fields: ['appearance', 'clothing', 'accessories'] },
+        { label: 'Action', fields: ['action', 'mood'] }
+    ],
+    vehicle: [
+        { label: 'Vehicle Specs', fields: ['vehicleType', 'vehicleColor'] }
+    ],
+    scenery: [
+        { label: 'Scene Mood', fields: ['mood'] }
+    ],
+    infographic: [
+        { label: 'Infographic Data', fields: ['chartType', 'infographicStyle', 'infographicContent'] }
+    ]
+};
+
+const GLOBAL_GROUPS_EN = [
+    { label: 'Composition & Camera', fields: ['composition', 'camera', 'aspectRatio', 'cameraMovement', 'motionStrength'] },
+    { label: 'Environment & Style', fields: ['environment', 'era', 'lighting', 'colorPalette', 'artStyle'] },
+    { label: 'Advanced', fields: ['quality', 'preservation', 'interaction'] }
+];
+
+const SUBJECT_TYPE_LABELS_ZH: Record<string, string> = {
+    human: '人類',
+    animal: '動物',
+    vehicle: '車輛',
+    scenery: '風景',
+    infographic: '資訊圖表'
+};
+
 export const usePromptGenerator = (
     state: PortraitState,
     outputLang: OutputLanguage,
@@ -81,7 +227,7 @@ export const usePromptGenerator = (
 
             // Localized fields
             const fields: Record<string, string> = {
-                subjectType: subj.subjectType,
+                subjectType: outputLang === 'en' ? subj.subjectType : (SUBJECT_TYPE_LABELS_ZH[subj.subjectType] || subj.subjectType),
                 nationality: resolveField('nationality', subj.nationality, outputLang),
                 age: resolveField('age', subj.age, outputLang),
                 gender: outputLang === 'en' ? genderTermEn : genderTermZh,
@@ -188,7 +334,7 @@ export const usePromptGenerator = (
             sections.push({
                 id: subj.id,
                 type: 'subject',
-                label: `Subject ${index + 1}`,
+                label: outputLang === 'en' ? `Subject ${index + 1}` : `主體 ${index + 1}`,
                 content: content
             });
 
@@ -264,20 +410,76 @@ export const usePromptGenerator = (
                 subjects: state.subjects.map(s => resolveSubject(s))
             };
             fullText = jsonToYaml(dataObj).trim();
-        } else if (outputFormat === 'markdown') {
-            fullText = sections.map(s => `**${s.label}**\n> ${s.content}`).join('\n\n');
-        } else {
-            // Text format: Join subjects with AND, then add global
-            const subjectsJoined = subjectStrings.join(outputLang === 'en' ? ' AND ' : ' 與 ');
-            const baseParts = [
-                state.subjects.length > 1 ? globalFields.interaction : null,
-                rawGlobal.taskMode === 'video_generation' ? globalFields.cameraMovement : null,
-                subjectsJoined,
-                ...globalContentParts.filter(p => !subjectStrings.includes(p)) // Avoid double adding for now, though globalContentParts is cleaner anyway
-            ].filter(Boolean);
+        } else if (outputFormat === 'markdown' || (outputFormat === 'text' && outputLang === 'zh')) {
+            const isMd = outputFormat === 'markdown';
+            const isZh = outputLang === 'zh';
+            const labels = isZh ? CATEGORY_LABELS_ZH : CATEGORY_LABELS_EN;
+            const subGroups = isZh ? SUBJECT_GROUPS_ZH : SUBJECT_GROUPS_EN;
+            const globGroups = isZh ? GLOBAL_GROUPS_ZH : GLOBAL_GROUPS_EN;
+            const groupedSections: string[] = [];
 
-            // Re-evaluating text construction to match sections perfectly
-            // Let's just join subject + global parts for pure text
+            state.subjects.forEach((subj, index) => {
+                const sFields = resolveSubject(subj);
+                const typeGroups = subGroups[subj.subjectType] || [];
+                const typeLabel = isZh ? (SUBJECT_TYPE_LABELS_ZH[subj.subjectType] || subj.subjectType) : subj.subjectType;
+
+                let subjectTitle = '';
+                if (state.subjects.length > 1) {
+                    const titleText = isZh ? `● 主體 ${index + 1} (${typeLabel})` : `● Subject ${index + 1} (${typeLabel})`;
+                    subjectTitle = isMd ? `## ${titleText}` : titleText;
+                }
+
+                const subjectContent: string[] = [];
+                typeGroups.forEach(group => {
+                    const groupLines = group.fields.map(f => {
+                        const val = sFields[f];
+                        if (!val) return null;
+                        const label = labels[f] || f;
+                        return isMd ? `- **${label}** : ${val}` : `  ${label} : ${val}`;
+                    }).filter(Boolean);
+
+                    if (groupLines.length > 0) {
+                        const groupHeader = isMd ? `### [${group.label}]` : `[${group.label}]`;
+                        subjectContent.push(`${groupHeader}\n${groupLines.join('\n')}`);
+                    }
+                });
+
+                if (subjectContent.length > 0) {
+                    groupedSections.push((subjectTitle ? subjectTitle + '\n' : '') + subjectContent.join('\n\n'));
+                }
+            });
+
+            const globalContent: string[] = [];
+            globGroups.forEach(group => {
+                const groupLines = group.fields.map(f => {
+                    if (f === 'interaction' && state.subjects.length <= 1) return null;
+                    const val = (globalFields as any)[f];
+                    if (!val) return null;
+                    const label = labels[f] || f;
+                    return isMd ? `- **${label}** : ${val}` : `  ${label} : ${val}`;
+                }).filter(Boolean);
+
+                if (groupLines.length > 0) {
+                    const groupHeader = isMd ? `### [${group.label}]` : `[${group.label}]`;
+                    globalContent.push(`${groupHeader}\n${groupLines.join('\n')}`);
+                }
+            });
+
+            if (globalContent.length > 0) {
+                const globalTitle = isZh ? `● 全域設定` : `● Global Settings`;
+                const title = isMd ? `## ${globalTitle}` : globalTitle;
+                groupedSections.push(`${title}\n` + globalContent.join('\n\n'));
+            }
+
+            if (globalFields.negative) {
+                const negLabel = isZh ? '負面提示詞' : 'Negative Prompt';
+                const negHeader = isMd ? `### [${negLabel}]` : `[${negLabel}]`;
+                groupedSections.push(`${negHeader}\n${isMd ? '' : '  '}${globalFields.negative}`);
+            }
+
+            fullText = groupedSections.join('\n\n');
+        } else {
+            // Text format (English): Join subjects with AND, then add global
             fullText = [
                 state.subjects.length > 1 ? globalFields.interaction : null,
                 ...subjectStrings,
